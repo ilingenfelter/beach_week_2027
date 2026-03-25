@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Weather &amp; Tides</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    /* ── Forecast cards ── */
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .forecast-card {
+      background: var(--white);
+      border-radius: var(--card-radius);
+      padding: 1rem 0.75rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,150,199,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .fc-dow   { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ocean-mid); }
+    .fc-date  { font-size: 0.8rem;  color: var(--text-light); }
+    .fc-icon  { font-size: 2.2rem;  line-height: 1; margin: 0.2rem 0; }
+    .fc-desc  { font-size: 0.72rem; color: var(--text-light); line-height: 1.2; min-height: 2em; }
+    .fc-temps { font-size: 1rem;    font-weight: 800; color: var(--text-dark); }
+    .fc-hi    { color: var(--coral); }
+    .fc-lo    { color: var(--ocean-mid); font-weight: 600; font-size: 0.85rem; }
+    .fc-detail { font-size: 0.72rem; color: var(--text-light); }
+    .fc-detail span { margin: 0 0.2rem; }
+    .forecast-loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-light);
+    }
+    .forecast-error {
+      background: var(--error-bg);
+      border: 1px solid #f4b3a8;
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      color: var(--error);
+      font-size: 0.9rem;
+    }
+
+    /* ── Tide table ── */
+    .tide-week-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .tide-day-card {
+      background: var(--white);
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0,150,199,0.1);
+    }
+    .tide-day-header {
+      background: linear-gradient(135deg, var(--ocean-deep), var(--ocean-mid));
+      color: var(--white);
+      padding: 0.6rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tide-day-dow  { font-weight: 800; font-size: 0.95rem; }
+    .tide-day-date { font-size: 0.8rem; opacity: 0.85; }
+    .tide-entries  { padding: 0.5rem 0; }
+    .tide-entry {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.45rem 1rem;
+      border-bottom: 1px solid var(--gray-light);
+      font-size: 0.9rem;
+    }
+    .tide-entry:last-child { border-bottom: none; }
+    .tide-type-icon { font-size: 1.1rem; flex-shrink: 0; width: 1.4rem; text-align: center; }
+    .tide-type-label { font-weight: 700; color: var(--ocean-deep); min-width: 2.5rem; font-size: 0.8rem; }
+    .tide-time  { color: var(--text-dark); flex: 1; }
+    .tide-ht    { font-weight: 700; color: var(--text-mid); white-space: nowrap; }
+    .tide-loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-light);
+    }
+    .tide-note  { font-size: 0.78rem; color: var(--text-light); margin-top: 0.5rem; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 1.25rem; height: 1.25rem;
+      border: 3px solid var(--sky-blue);
+      border-top-color: var(--ocean-mid);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>🌊 Weather &amp; Tides</h1>
+    <p>Nags Head, NC — live forecast + beach week tides</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ── 7-DAY WEATHER FORECAST ──────────────── -->
+    <section class="section">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.25rem;">
+        <div>
+          <h2 class="section-title" style="margin-bottom:0.2rem;">🌤️ 7-Day Forecast</h2>
+          <p class="text-muted" style="font-size:0.85rem;">Nags Head, NC · Updated on page load</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadForecast()">🔄 Refresh</button>
+      </div>
+
+      <div id="forecastContainer">
+        <div class="forecast-loading"><span class="spinner"></span> Loading forecast…</div>
+      </div>
+      <p class="text-muted" style="font-size:0.78rem; text-align:right; margin-top:0.4rem;">
+        Data via <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> — free &amp; open weather API
+      </p>
+    </section>
+
+    <!-- ── BEACH WEEK TIDE TABLE ────────────────── -->
+    <section class="section">
+      <h2 class="section-title">🌊 Beach Week Tides</h2>
+      <p class="section-subtitle">High &amp; low tides for July 10–17, 2027 · Nags Head, NC (NOAA Station 8651370)</p>
+
+      <div id="tideContainer">
+        <div class="tide-loading"><span class="spinner"></span> Loading tide predictions…</div>
+      </div>
+      <p class="tide-note">
+        🏖️ = Low tide (best for shelling &amp; walking) · 🌊 = High tide ·
+        Heights in feet above MLLW ·
+        <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=8651370" target="_blank" rel="noopener">View full NOAA chart →</a>
+      </p>
+    </section>
+
+    <!-- ── USEFUL LINKS ──────────────────────────── -->
+    <section class="section">
+      <h2 class="section-title">🔗 Useful Links</h2>
+      <div class="weather-link-grid">
+
+        <div class="weather-link-card">
+          <span class="big-icon">🌊</span>
+          <h3>Full Tide Chart</h3>
+          <p>NOAA official tide predictions for Nags Head. Full calendar view.</p>
+          <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=8651370&units=standard&bdate=20270710&edate=20270717&timezone=LST/LDT&clock=12hour&datum=MLLW&interval=hilo&action=dailychart"
+             target="_blank" rel="noopener" class="btn btn-primary btn-sm">NOAA Tide Chart →</a>
+        </div>
+
+        <div class="weather-link-card">
+          <span class="big-icon">☀️</span>
+          <h3>NWS OBX Forecast</h3>
+          <p>National Weather Service detailed forecast for the Outer Banks including UV index.</p>
+          <a href="https://www.weather.gov/rah/obx" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">NWS OBX →</a>
+        </div>
+
+        <div class="weather-link-card">
+          <span class="big-icon">🏄</span>
+          <h3>Surf Report</h3>
+          <p>Wave heights, swell direction &amp; surf conditions before paddling out.</p>
+          <a href="https://www.surfline.com/surf-report/cape-hatteras/5842041f4e65fad6a7708970"
+             target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Surfline OBX →</a>
+        </div>
+
+        <div class="weather-link-card">
+          <span class="big-icon">🚩</span>
+          <h3>Beach Flag System</h3>
+          <p>🟢 Green = calm · 🟡 Yellow = moderate · 🔴 Red = high hazard · 🟣 Purple = marine life</p>
+          <a href="https://www.nps.gov/caha/planyourvisit/beach-safety.htm"
+             target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Beach Safety →</a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── BEACH CONDITIONS ─────────────────────── -->
+    <section class="section">
+      <h2 class="section-title">🏖️ Daily Beach Conditions</h2>
+      <p class="section-subtitle">Admin-posted notes — flag color, wave conditions, anything worth knowing.</p>
+
+      <div class="beach-conditions-card">
+        <div class="conditions-display">
+          <div class="conditions-text" id="conditionsText">No conditions posted yet — check back after arrival!</div>
+          <div class="conditions-meta" id="conditionsMeta">Last updated: —</div>
+        </div>
+        <button class="btn btn-primary btn-sm mt-2" onclick="toggleConditionsForm()">✏️ Update Conditions</button>
+
+        <div class="admin-section hidden mt-2" id="adminConditionsForm">
+          <div class="admin-section-title">⚙️ Post Today's Conditions</div>
+          <div class="form-group">
+            <label class="form-label">Beach Conditions Note</label>
+            <textarea id="conditionsInput" class="form-textarea" rows="3"
+              placeholder="e.g. 🔴 Red flag up — rough surf today. UV index is 10 (very high), reapply SPF every hour!"></textarea>
+          </div>
+          <div class="flex flex-gap">
+            <button class="btn btn-primary" onclick="saveConditions()">💾 Post Update</button>
+            <button class="btn btn-danger"  onclick="clearConditions()">🗑️ Clear</button>
+          </div>
+          <p id="conditionsSaveMsg" class="success-text mt-1"></p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('weather.html');
+    document.title = `${siteName()} — Weather`;
+
+    // ============================================================
+    //  WMO WEATHER CODE → emoji + description
+    // ============================================================
+    function wmoInfo(code) {
+      const map = {
+        0:  { icon: '☀️',  desc: 'Clear sky' },
+        1:  { icon: '🌤️', desc: 'Mainly clear' },
+        2:  { icon: '⛅',  desc: 'Partly cloudy' },
+        3:  { icon: '☁️',  desc: 'Overcast' },
+        45: { icon: '🌫️', desc: 'Foggy' },
+        48: { icon: '🌫️', desc: 'Icy fog' },
+        51: { icon: '🌦️', desc: 'Light drizzle' },
+        53: { icon: '🌦️', desc: 'Drizzle' },
+        55: { icon: '🌧️', desc: 'Heavy drizzle' },
+        61: { icon: '🌧️', desc: 'Light rain' },
+        63: { icon: '🌧️', desc: 'Rain' },
+        65: { icon: '🌧️', desc: 'Heavy rain' },
+        71: { icon: '🌨️', desc: 'Light snow' },
+        73: { icon: '🌨️', desc: 'Snow' },
+        75: { icon: '❄️',  desc: 'Heavy snow' },
+        77: { icon: '🌨️', desc: 'Snow grains' },
+        80: { icon: '🌦️', desc: 'Light showers' },
+        81: { icon: '🌧️', desc: 'Showers' },
+        82: { icon: '⛈️',  desc: 'Heavy showers' },
+        85: { icon: '🌨️', desc: 'Snow showers' },
+        86: { icon: '❄️',  desc: 'Heavy snow showers' },
+        95: { icon: '⛈️',  desc: 'Thunderstorm' },
+        96: { icon: '⛈️',  desc: 'T-storm w/ hail' },
+        99: { icon: '⛈️',  desc: 'T-storm w/ hail' },
+      };
+      return map[code] || { icon: '🌡️', desc: `Code ${code}` };
+    }
+
+    // Append T12:00:00 so the date is noon local time — avoids DST/UTC edge cases
+    function parseLocalDate(isoOrSlash) {
+      // Accepts "2027-07-10" or "2027/07/10"
+      const clean = isoOrSlash.replace(/\//g, '-');
+      return new Date(clean + 'T12:00:00');
+    }
+
+    function fmtDate(isoStr) {
+      const d = parseLocalDate(isoStr);
+      return {
+        dow:  d.toLocaleDateString('en-US', { weekday: 'short' }),  // "Thu"
+        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) // "Jul 10"
+      };
+    }
+
+    // ============================================================
+    //  OPEN-METEO 7-DAY FORECAST
+    //  Nags Head, NC: 35.9579, -75.6252
+    // ============================================================
+    async function loadForecast() {
+      const container = document.getElementById('forecastContainer');
+      container.innerHTML = '<div class="forecast-loading"><span class="spinner"></span> Loading forecast…</div>';
+
+      const url = 'https://api.open-meteo.com/v1/forecast'
+        + '?latitude=35.9579&longitude=-75.6252'
+        + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max'
+        + '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch'
+        + '&timezone=America%2FNew_York&forecast_days=7';
+
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        renderForecast(data.daily);
+      } catch (err) {
+        container.innerHTML = `
+          <div class="forecast-error">
+            ⚠️ Couldn't load forecast (${err.message}). Check your connection or try refreshing.
+            <br><a href="https://forecast.weather.gov/MapClick.php?CityName=Nags+Head&state=NC" target="_blank" rel="noopener" style="color:var(--error);">Open NWS forecast instead →</a>
+          </div>`;
+      }
+    }
+
+    function renderForecast(daily) {
+      const container = document.getElementById('forecastContainer');
+      const n = daily.time.length;
+      let html = '<div class="forecast-grid">';
+
+      for (let i = 0; i < n; i++) {
+        const { dow, date } = fmtDate(daily.time[i]);
+        const wmo   = wmoInfo(daily.weather_code[i]);
+        const hi    = Math.round(daily.temperature_2m_max[i]);
+        const lo    = Math.round(daily.temperature_2m_min[i]);
+        const precip = daily.precipitation_probability_max[i] ?? '—';
+        const wind  = Math.round(daily.wind_speed_10m_max[i]);
+        const uv    = daily.uv_index_max[i] != null ? daily.uv_index_max[i].toFixed(1) : '—';
+
+        html += `
+          <div class="forecast-card">
+            <div class="fc-dow">${dow}</div>
+            <div class="fc-date">${date}</div>
+            <div class="fc-icon">${wmo.icon}</div>
+            <div class="fc-desc">${wmo.desc}</div>
+            <div class="fc-temps">
+              <span class="fc-hi">${hi}°</span> / <span class="fc-lo">${lo}°</span>
+            </div>
+            <div class="fc-detail">
+              <span title="Precipitation chance">💧${precip}%</span>
+              <span title="Max wind speed">💨${wind}mph</span>
+            </div>
+            <div class="fc-detail">
+              <span title="UV index">☀️UV ${uv}</span>
+            </div>
+          </div>`;
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // ============================================================
+    //  NOAA TIDE PREDICTIONS — July 10–17, 2027
+    //  Station 8651370 (Nags Head, NC)
+    // ============================================================
+    async function loadTides() {
+      const container = document.getElementById('tideContainer');
+      container.innerHTML = '<div class="tide-loading"><span class="spinner"></span> Loading tide predictions…</div>';
+
+      const url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'
+        + '?begin_date=20270710&end_date=20270717'
+        + '&station=8651370'
+        + '&product=predictions&datum=MLLW&time_zone=lst_ldt'
+        + '&interval=hilo&units=english'
+        + '&application=beach_week_site&format=json';
+
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error.message || 'NOAA API error');
+        renderTides(data.predictions);
+      } catch (err) {
+        container.innerHTML = `
+          <div class="forecast-error">
+            ⚠️ Couldn't load tide data (${err.message}).
+            <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=8651370&units=standard&bdate=20270710&edate=20270717&timezone=LST/LDT&clock=12hour&datum=MLLW&interval=hilo&action=dailychart"
+               target="_blank" rel="noopener" style="color:var(--error);">View on NOAA →</a>
+          </div>`;
+      }
+    }
+
+    function renderTides(predictions) {
+      // Group by date (YYYY/MM/DD portion of the t field "2027/07/10 06:32")
+      const byDay = {};
+      const dayOrder = [];
+      predictions.forEach(p => {
+        const day = p.t.split(' ')[0]; // "2027/07/10"
+        if (!byDay[day]) { byDay[day] = []; dayOrder.push(day); }
+        byDay[day].push(p);
+      });
+
+      let html = '<div class="tide-week-grid">';
+
+      dayOrder.forEach(dayKey => {
+        const dateObj    = parseLocalDate(dayKey);
+        const dow        = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+        const displayDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        html += `
+          <div class="tide-day-card">
+            <div class="tide-day-header">
+              <span class="tide-day-dow">${dow}</span>
+              <span class="tide-day-date">${displayDate}</span>
+            </div>
+            <div class="tide-entries">`;
+
+        byDay[dayKey].forEach(entry => {
+          const isHigh = entry.type === 'H';
+          const icon  = isHigh ? '🌊' : '🏖️';
+          const label = isHigh ? 'High' : 'Low';
+          const ht    = parseFloat(entry.v).toFixed(1);
+
+          // Format time: "06:32" from "2027/07/10 06:32"
+          const timePart = entry.t.split(' ')[1]; // "06:32"
+          const [hr, min] = timePart.split(':').map(Number);
+          const ampm  = hr >= 12 ? 'PM' : 'AM';
+          const hr12  = hr % 12 || 12;
+          const timeStr = `${hr12}:${String(min).padStart(2,'0')} ${ampm}`;
+
+          html += `
+            <div class="tide-entry">
+              <span class="tide-type-icon">${icon}</span>
+              <span class="tide-type-label">${label}</span>
+              <span class="tide-time">${timeStr}</span>
+              <span class="tide-ht">${ht} ft</span>
+            </div>`;
+        });
+
+        html += `</div></div>`;
+      });
+
+      html += '</div>';
+      document.getElementById('tideContainer').innerHTML = html;
+    }
+
+    // ============================================================
+    //  BEACH CONDITIONS (admin)
+    // ============================================================
+    const COND_KEY = 'bw_conditions';
+
+    function loadConditions() {
+      return JSON.parse(localStorage.getItem(COND_KEY) || 'null');
+    }
+    function renderConditions() {
+      const data = loadConditions();
+      if (data && data.text) {
+        document.getElementById('conditionsText').textContent = data.text;
+        document.getElementById('conditionsMeta').textContent = `Last updated: ${new Date(data.ts).toLocaleString()}`;
+      }
+    }
+    function saveConditions() {
+      const text = document.getElementById('conditionsInput').value.trim();
+      if (!text) { alert('Please enter a conditions note.'); return; }
+      localStorage.setItem(COND_KEY, JSON.stringify({ text, ts: Date.now() }));
+      renderConditions();
+      const msg = document.getElementById('conditionsSaveMsg');
+      msg.textContent = '✅ Conditions updated!';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    }
+    function clearConditions() {
+      if (!confirm('Clear the current beach conditions post?')) return;
+      localStorage.removeItem(COND_KEY);
+      document.getElementById('conditionsText').textContent = 'No conditions posted yet — check back after arrival!';
+      document.getElementById('conditionsMeta').textContent = 'Last updated: —';
+      document.getElementById('conditionsSaveMsg').textContent = '🗑️ Cleared.';
+      setTimeout(() => { document.getElementById('conditionsSaveMsg').textContent = ''; }, 3000);
+    }
+
+    // ── Boot ──────────────────────────────────────
+    renderConditions();
+    loadForecast();
+    loadTides();
+
+    function toggleConditionsForm() {
+      const form = document.getElementById('adminConditionsForm');
+      const wasHidden = form.classList.contains('hidden');
+      form.classList.toggle('hidden');
+      if (wasHidden) {
+        const data = loadConditions();
+        if (data && data.text) document.getElementById('conditionsInput').value = data.text;
+      }
+    }
+  </script>
+</body>
+</html>

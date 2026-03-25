@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Activities</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>🌴 Activities</h1>
+    <p>Sign up for what you want to do this week!</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
+      <div>
+        <h2 class="section-title" style="margin-bottom:0.15rem;">🌴 Beach Week Activities</h2>
+        <p class="text-muted" style="font-size:0.88rem;">Enter your name under any activity you'd like to join</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleProposalForm()">💡 Add Activity</button>
+    </div>
+
+    <!-- Activity Cards Grid -->
+    <div class="activities-grid" id="activitiesGrid"></div>
+
+    <!-- ── Add Activity Form ──────────────────── -->
+    <section class="admin-section hidden mt-3" id="adminProposalForm">
+      <div class="admin-section-title">💡 Add a New Activity</div>
+      <div class="form-group">
+        <label class="form-label">Activity Name</label>
+        <input type="text" id="newActName" class="form-input" placeholder="e.g. Kayak Tour" maxlength="60" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="newActDesc" class="form-textarea" rows="2" placeholder="What is it? Where? Any details…" maxlength="200"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Proposed By</label>
+        <input type="text" id="newActProposer" class="form-input" placeholder="e.g. Grandpa" maxlength="40" />
+      </div>
+      <p id="proposalError" class="error-text"></p>
+      <div class="flex flex-gap flex-wrap">
+        <button class="btn btn-primary" onclick="addActivity()">✅ Add Activity</button>
+        <button class="btn btn-danger"  onclick="clearAllActivities()">🗑️ Reset All</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('activities.html');
+    document.title = `${siteName()} — Activities`;
+
+    const ACT_KEY = 'bw_activities';
+
+    // ── Data helpers ──────────────────────────────
+    function loadActivities() {
+      const saved = localStorage.getItem(ACT_KEY);
+      if (saved) {
+        const arr = JSON.parse(saved);
+        // Migrate old data: add signups array if missing
+        arr.forEach(a => { if (!a.signups) a.signups = []; });
+        return arr;
+      }
+      // First load: seed from config
+      const fresh = JSON.parse(JSON.stringify(CONFIG.initialActivities));
+      fresh.forEach(a => { if (!a.signups) a.signups = []; });
+      localStorage.setItem(ACT_KEY, JSON.stringify(fresh));
+      return fresh;
+    }
+
+    function saveActivities(arr) {
+      localStorage.setItem(ACT_KEY, JSON.stringify(arr));
+      dbSet('activities', arr);
+    }
+
+    // ── Sign up ───────────────────────────────────
+    function signUp(id) {
+      const nameEl = document.getElementById('si-' + id);
+      const name   = nameEl ? nameEl.value.trim() : '';
+      if (!name) { nameEl && nameEl.focus(); return; }
+
+      const activities = loadActivities();
+      const act        = activities.find(a => a.id === id);
+      if (!act) return;
+
+      // Prevent duplicate names (case-insensitive)
+      if (act.signups.some(n => n.toLowerCase() === name.toLowerCase())) {
+        nameEl.value = '';
+        nameEl.placeholder = 'Already signed up!';
+        setTimeout(() => { nameEl.placeholder = 'Your name'; }, 2000);
+        return;
+      }
+
+      act.signups.push(name);
+      saveActivities(activities);
+
+      // Update chips in-place
+      renderSignups(id, act.signups);
+      nameEl.value = '';
+    }
+
+    function removeSignup(actId, name) {
+      const activities = loadActivities();
+      const act        = activities.find(a => a.id === actId);
+      if (!act) return;
+      act.signups = act.signups.filter(n => n !== name);
+      saveActivities(activities);
+      renderSignups(actId, act.signups);
+    }
+
+    function renderSignups(actId, signups) {
+      const container = document.getElementById('sl-' + actId);
+      if (!container) return;
+      container.innerHTML = signups.length === 0
+        ? '<span class="signup-empty">No one yet — be the first!</span>'
+        : signups.map(n =>
+            `<span class="signup-chip">
+              ${escHtml(n)}
+              <button class="signup-chip-remove" onclick="removeSignup('${escHtml(actId)}','${escHtml(n)}')" title="Remove">✕</button>
+            </span>`
+          ).join('');
+    }
+
+    // ── Remove activity ───────────────────────────
+    function removeActivity(id) {
+      if (!confirm('Remove this activity?')) return;
+      const activities = loadActivities().filter(a => a.id !== id);
+      saveActivities(activities);
+      const card = document.getElementById('ac-' + id);
+      if (card) card.remove();
+    }
+
+    // ── Add activity ──────────────────────────────
+    function addActivity() {
+      const name     = document.getElementById('newActName').value.trim();
+      const desc     = document.getElementById('newActDesc').value.trim();
+      const proposer = document.getElementById('newActProposer').value.trim();
+      const errEl    = document.getElementById('proposalError');
+      errEl.textContent = '';
+
+      if (!name) { errEl.textContent = 'Activity name is required.'; return; }
+      if (!desc) { errEl.textContent = 'Please add a description.'; return; }
+
+      const activities = loadActivities();
+      const newAct = {
+        id: 'act_' + Date.now(),
+        name,
+        description: desc,
+        proposedBy: proposer || 'Anonymous',
+        signups: []
+      };
+      activities.push(newAct);
+      saveActivities(activities);
+
+      // Append card without full re-render
+      const grid = document.getElementById('activitiesGrid');
+      grid.appendChild(buildActivityCard(newAct));
+
+      document.getElementById('newActName').value     = '';
+      document.getElementById('newActDesc').value     = '';
+      document.getElementById('newActProposer').value = '';
+      errEl.textContent = '✅ Added!';
+      errEl.style.color = 'var(--success)';
+      setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 2500);
+    }
+
+    function clearAllActivities() {
+      if (!confirm('Reset ALL activities back to the defaults from config.js? This cannot be undone.')) return;
+      localStorage.removeItem(ACT_KEY);
+      dbSet('activities', null);
+      renderActivities();
+    }
+
+    // ── Build a single card element ───────────────
+    function buildActivityCard(act) {
+      const card = document.createElement('div');
+      card.className = 'activity-card';
+      card.id = 'ac-' + act.id;
+      card.innerHTML = `
+        <button class="activity-remove-btn" onclick="removeActivity('${act.id}')" title="Remove this activity">✕</button>
+        <div class="activity-name">${escHtml(act.name)}</div>
+        <div class="activity-desc">${escHtml(act.description)}</div>
+        <div class="activity-proposed-by">💡 Proposed by ${escHtml(act.proposedBy)}</div>
+        <div class="signup-section">
+          <div class="signup-label">Who's in?</div>
+          <div class="signup-chips" id="sl-${act.id}"></div>
+          <div class="signup-input-row">
+            <input
+              type="text"
+              id="si-${act.id}"
+              class="form-input signup-input"
+              placeholder="Your name"
+              maxlength="40"
+              onkeydown="if(event.key==='Enter') signUp('${act.id}')"
+            />
+            <button class="btn btn-primary btn-sm" onclick="signUp('${act.id}')">Join</button>
+          </div>
+        </div>
+      `;
+      renderSignups(act.id, act.signups);
+      return card;
+    }
+
+    // ── Render all cards ──────────────────────────
+    function renderActivities() {
+      const activities = loadActivities();
+      const grid       = document.getElementById('activitiesGrid');
+      grid.innerHTML   = '';
+      activities.forEach(act => grid.appendChild(buildActivityCard(act)));
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toggleProposalForm() {
+      document.getElementById('adminProposalForm').classList.toggle('hidden');
+    }
+
+    // ── Boot ──────────────────────────────────────
+    renderActivities(); // render immediately from localStorage
+    dbGet('activities').then(remote => {
+      if (!remote) return;
+      remote.forEach(a => { if (!a.signups) a.signups = []; });
+      localStorage.setItem(ACT_KEY, JSON.stringify(remote));
+      renderActivities();
+    });
+  </script>
+</body>
+</html>

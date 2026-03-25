@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Walk There</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="config.js"></script>
+  <style>
+    #walk-map {
+      height: 440px;
+      border-radius: var(--card-radius);
+      border: 2px solid var(--sky-blue);
+      margin-bottom: 1.5rem;
+      z-index: 0;
+    }
+    .walk-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .walk-stat-card {
+      background: var(--white);
+      border-radius: var(--card-radius);
+      padding: 1.2rem 0.9rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 2px solid var(--sky-blue);
+    }
+    .walk-stat-icon  { font-size: 2rem; margin-bottom: 0.3rem; display: block; }
+    .walk-stat-label { font-size: 0.73rem; font-weight: 700; text-transform: uppercase;
+                       letter-spacing: 0.07em; color: var(--text-light); margin-bottom: 0.2rem; }
+    .walk-stat-value { font-size: 1.45rem; font-weight: 900; color: var(--ocean-deep); line-height: 1.1; }
+    .walk-stat-sub   { font-size: 0.75rem; color: var(--text-light); margin-top: 0.2rem; font-style: italic; }
+
+    .walk-verdict {
+      background: linear-gradient(135deg, var(--ocean-deep), var(--ocean-mid));
+      color: white;
+      border-radius: var(--card-radius);
+      padding: 1.75rem 1.5rem;
+      text-align: center;
+      margin-top: 1.5rem;
+      box-shadow: var(--shadow-md);
+    }
+    .walk-verdict-emoji { font-size: 3.5rem; display: block; margin-bottom: 0.5rem; }
+    .walk-verdict-text  { font-size: 1.2rem; font-weight: 900; }
+    .walk-verdict-sub   { font-size: 0.9rem; opacity: 0.88; margin-top: 0.5rem; line-height: 1.5; }
+
+    .walk-arrive-callout {
+      background: var(--sand);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+      font-weight: 700;
+      color: var(--ocean-deep);
+      text-align: center;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      box-shadow: var(--shadow-sm);
+    }
+    .walk-arrive-callout small { font-weight: 400; display: block; margin-top: 0.35rem; }
+
+    .walk-straight-line-note {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: var(--radius);
+      padding: 0.6rem 1rem;
+      font-size: 0.82rem;
+      color: #795548;
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>🚶 Walk to Beach Week</h1>
+    <p>How long would it <em>actually</em> take you to walk here?</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Address input -->
+    <section class="section">
+      <h2 class="section-title" style="margin-bottom:0.5rem;">📍 Where are you walking from?</h2>
+      <p class="text-muted" style="font-size:0.9rem; margin-bottom:1rem;">
+        Enter your home address and we'll calculate the journey. We promise it's farther than you think.
+      </p>
+      <div class="flex flex-gap flex-wrap" style="align-items:flex-end;">
+        <div class="form-group" style="flex:1; min-width:220px; margin-bottom:0;">
+          <input type="text" id="walkFrom" class="form-input"
+            placeholder="e.g. 123 Main St, Chicago, IL" />
+        </div>
+        <button class="btn btn-primary" onclick="calculateWalk()" id="walkBtn">
+          🚶 Calculate My Walk
+        </button>
+      </div>
+      <p id="walkError" class="error-text mt-1"></p>
+    </section>
+
+    <!-- Map — always visible, centered on Nags Head -->
+    <div id="walk-map"></div>
+
+    <!-- Results — hidden until a route is calculated -->
+    <section id="walkResults" class="hidden">
+      <div class="walk-stats-grid" id="walkStatsGrid"></div>
+      <div class="walk-verdict"        id="walkVerdict"></div>
+      <div class="walk-arrive-callout" id="walkArriveCallout"></div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('walk.html');
+    document.title = `${siteName()} — Walk There`;
+
+    // ── Destination (Nags Head, NC) ───────────────
+    // Approximate center of Nags Head — route endpoint uses road network anyway
+    const DEST = { lat: 35.9605, lng: -75.6215 };
+
+    // ── Map ───────────────────────────────────────
+    const map = L.map('walk-map').setView([DEST.lat, DEST.lng], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    const beachIcon = L.divIcon({
+      html: '<div style="font-size:2.2rem;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.45));">🏖️</div>',
+      className: '', iconSize: [34, 34], iconAnchor: [17, 17],
+    });
+    const destMarker = L.marker([DEST.lat, DEST.lng], { icon: beachIcon })
+      .addTo(map)
+      .bindPopup(`<strong>🏖️ ${siteName()}</strong><br>${CONFIG.house.address.replace('\n', '<br>')}`)
+      .openPopup();
+
+    let routeLayer   = null;
+    let originMarker = null;
+
+    // ── Geocode an address via Nominatim ──────────
+    async function geocode(address) {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      try {
+        const res  = await fetch(url, {
+          signal: controller.signal,
+          headers: { 'User-Agent': 'BeachWeekFamilySite/2027' },
+        });
+        clearTimeout(timeout);
+        const data = await res.json();
+        if (!data.length) throw new Error('Address not found — try adding a city or zip code.');
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
+      } catch(e) {
+        clearTimeout(timeout);
+        throw e;
+      }
+    }
+
+    // ── Get walking route via OSRM (public demo) ──
+    async function getRoute(from, to) {
+      const url = `https://router.project-osrm.org/route/v1/foot/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      try {
+        const res  = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        const data = await res.json();
+        if (data.code !== 'Ok' || !data.routes.length) throw new Error('no-route');
+        return {
+          distance: data.routes[0].distance,  // meters
+          duration: data.routes[0].duration,  // seconds
+          geometry: data.routes[0].geometry,  // GeoJSON
+        };
+      } catch(e) {
+        clearTimeout(timeout);
+        throw new Error('no-route');
+      }
+    }
+
+    // ── Haversine fallback (straight-line km) ─────
+    function haversineKm(a, b) {
+      const R = 6371, r = Math.PI / 180;
+      const dLat = (b.lat - a.lat) * r;
+      const dLng = (b.lng - a.lng) * r;
+      const h = Math.sin(dLat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    // ── Funny verdict based on distance ───────────
+    function getVerdict(miles) {
+      if (miles < 3)    return { emoji: '😒', text: "That is not a walk. That's a stroll.", sub: "You live down the street. Pack lighter." };
+      if (miles < 15)   return { emoji: '😄', text: "Honestly? Totally doable.", sub: "Grab some sneakers and a podcast. You've got this." };
+      if (miles < 40)   return { emoji: '😅', text: "Bold. Very bold.", sub: "You'll need a blister kit, two water bottles, and a very good attitude." };
+      if (miles < 100)  return { emoji: '😬', text: "You're going to need to train for this.", sub: "Tell your family you'll see them... eventually." };
+      if (miles < 300)  return { emoji: '😳', text: "That is a journey, not a walk.", sub: "You'll re-evaluate your life choices somewhere around mile 80." };
+      if (miles < 800)  return { emoji: '🤯', text: "Sir/ma'am, that is a cross-country expedition.", sub: "You will have grown a full beard by the time you arrive. Possibly two." };
+      if (miles < 2000) return { emoji: '🌎', text: "Are you in a different timezone?", sub: "You'll arrive at beach week. In a future year. Pack accordingly." };
+      return { emoji: '🚢', text: "Are you on a different continent?", sub: "Build a raft. It's genuinely faster." };
+    }
+
+    // ── Format a duration in hours ────────────────
+    function fmtTime(hours) {
+      if (hours < 1)     return `${Math.round(hours * 60)} min`;
+      if (hours < 24)    return `${hours.toFixed(1)} hrs`;
+      const days = hours / 24;
+      if (days < 7)      return `${days.toFixed(1)} days`;
+      const weeks = days / 7;
+      if (weeks < 52)    return `${weeks.toFixed(1)} wks`;
+      return `${(weeks / 52).toFixed(1)} yrs`;
+    }
+
+    function fmt(n) { return Math.round(n).toLocaleString(); }
+
+    // ── Main function ─────────────────────────────
+    async function calculateWalk() {
+      const input = document.getElementById('walkFrom').value.trim();
+      const errEl = document.getElementById('walkError');
+      const btn   = document.getElementById('walkBtn');
+      errEl.textContent = '';
+
+      if (!input) { errEl.textContent = 'Please enter a starting address.'; return; }
+
+      btn.textContent = '⏳ Calculating…';
+      btn.disabled = true;
+
+      try {
+        // 1 — Geocode the user's address
+        const origin = await geocode(input);
+
+        // 2 — Try OSRM road-walking route; fall back to straight-line
+        let distanceM, durationSec, geometry = null, isStraightLine = false;
+        try {
+          const route = await getRoute(origin, DEST);
+          distanceM   = route.distance;
+          durationSec = route.duration;
+          geometry    = route.geometry;
+        } catch(e) {
+          const km    = haversineKm(origin, DEST);
+          distanceM   = km * 1000;
+          durationSec = (km / 4.8) * 3600; // 4.8 km/h walking pace
+          isStraightLine = true;
+        }
+
+        // 3 — Update map
+        if (routeLayer)   { map.removeLayer(routeLayer);   routeLayer   = null; }
+        if (originMarker) { map.removeLayer(originMarker); originMarker = null; }
+
+        const homeIcon = L.divIcon({
+          html: '<div style="font-size:2rem;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45));">🏠</div>',
+          className: '', iconSize: [30, 30], iconAnchor: [15, 15],
+        });
+        originMarker = L.marker([origin.lat, origin.lng], { icon: homeIcon })
+          .addTo(map)
+          .bindPopup(`🏠 Your starting point<br><small>${origin.display.split(',').slice(0, 3).join(',')}</small>`);
+
+        if (geometry) {
+          routeLayer = L.geoJSON(geometry, {
+            style: { color: '#e76f51', weight: 5, opacity: 0.85 }
+          }).addTo(map);
+        } else {
+          // Straight-line dashed path
+          routeLayer = L.polyline(
+            [[origin.lat, origin.lng], [DEST.lat, DEST.lng]],
+            { color: '#e76f51', weight: 4, dashArray: '10, 7', opacity: 0.8 }
+          ).addTo(map);
+        }
+        map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+
+        // 4 — Calculate fun stats
+        const miles      = distanceM / 1609.34;
+        const walkHours  = durationSec / 3600;
+        const walkDays   = walkHours / 24;
+        const driveHours = miles / 65;                        // ~65 mph average
+        const steps      = miles * 2112;                      // avg steps/mile
+        const calories   = miles * 100;                       // ~100 kcal/mile walking
+        const gatorades  = Math.max(1, miles / 7);            // one bottle per ~7 miles
+        const sunburns   = Math.max(1, miles / 35);           // one burn per ~35 miles
+        const episodes   = walkHours / (22 / 60);             // 22-min TV episodes
+        const sandwiches = Math.max(1, miles / 12);           // hunger every ~12 miles
+        const bandaids   = Math.max(2, miles / 8);            // blisters are real
+        const coffees    = Math.max(1, walkDays * 2);         // 2 coffees a day
+
+        const STATS = [
+          { icon: '📏', label: 'Walking Distance',    value: `${miles.toFixed(1)} mi`,      sub: `${(distanceM/1000).toFixed(1)} km` },
+          { icon: '⏱️', label: 'Walking Time',        value: fmtTime(walkHours),             sub: isStraightLine ? 'straight-line estimate' : 'via roads' },
+          { icon: '🚗', label: 'Driving Instead',     value: `${driveHours.toFixed(1)} hrs`, sub: 'just saying…' },
+          { icon: '🦶', label: 'Steps',               value: fmt(steps),                     sub: 'your poor feet' },
+          { icon: '🔥', label: 'Calories Burned',     value: fmt(calories),                  sub: 'that\'s a lot of hot dogs' },
+          { icon: '🥤', label: 'Gatorades Needed',    value: fmt(gatorades),                 sub: 'electrolytes or bust' },
+          { icon: '☀️', label: 'Estimated Sunburns',  value: fmt(sunburns),                  sub: 'SPF 1000 recommended' },
+          { icon: '📺', label: 'Episodes Missed',     value: fmt(episodes),                  sub: '22-min episodes — gone' },
+          { icon: '🥪', label: 'Sandwiches Required', value: fmt(sandwiches),                sub: 'you will be starving' },
+          { icon: '🩹', label: 'Band-Aids Needed',    value: fmt(bandaids),                  sub: 'blisters are inevitable' },
+          { icon: '☕', label: 'Coffees Required',    value: fmt(coffees),                   sub: `over ${Math.ceil(walkDays)} day${walkDays > 1 ? 's' : ''}` },
+          { icon: '😴', label: 'Sleep Stops',         value: fmt(Math.max(0, walkDays - 1)), sub: 'assuming 8 hrs/night' },
+        ];
+
+        const grid = document.getElementById('walkStatsGrid');
+        grid.innerHTML = '';
+        STATS.forEach(s => {
+          const card = document.createElement('div');
+          card.className = 'walk-stat-card';
+          card.innerHTML = `
+            <span class="walk-stat-icon">${s.icon}</span>
+            <div class="walk-stat-label">${s.label}</div>
+            <div class="walk-stat-value">${s.value}</div>
+            <div class="walk-stat-sub">${s.sub}</div>
+          `;
+          grid.appendChild(card);
+        });
+
+        // 5 — Verdict
+        const v = getVerdict(miles);
+        document.getElementById('walkVerdict').innerHTML = `
+          <span class="walk-verdict-emoji">${v.emoji}</span>
+          <div class="walk-verdict-text">${v.text}</div>
+          <div class="walk-verdict-sub">${v.sub}</div>
+        `;
+
+        // 6 — Arrival callout
+        const arriveDate = new Date(Date.now() + durationSec * 1000);
+        const arriveStr  = arriveDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        const arriveTime = arriveDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+        const tripStart  = new Date(CONFIG.dates.startISO + 'T16:00:00');
+        const departBy   = new Date(tripStart.getTime() - durationSec * 1000);
+        const departStr  = departBy.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+        document.getElementById('walkArriveCallout').innerHTML =
+          `👟 If you left <em>right now</em>, you'd arrive on <strong>${arriveStr}</strong> at ${arriveTime}.<br>` +
+          `🗓️ To make beach week on time, you'd need to leave by <strong>${departStr}</strong>.` +
+          (isStraightLine
+            ? `<small>📍 Straight-line estimate shown — a full road route wasn't available for this distance (you may need to cross water).</small>`
+            : '');
+
+        document.getElementById('walkResults').classList.remove('hidden');
+        document.getElementById('walkResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      } catch(e) {
+        errEl.textContent = (e.message && e.message !== 'no-route')
+          ? e.message
+          : 'Couldn\'t calculate a route. Try a more specific address, or accept that you might need to swim. 🏊';
+      } finally {
+        btn.textContent = '🚶 Calculate My Walk';
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('walkFrom').addEventListener('keydown', e => {
+      if (e.key === 'Enter') calculateWalk();
+    });
+  </script>
+</body>
+</html>

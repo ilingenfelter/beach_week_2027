@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Meal Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    /* ── Easter Egg: Magic 8-Ball ── */
+    .eightball-overlay {
+      position: fixed; inset: 0; z-index: 900;
+      background: rgba(0,0,0,0.78);
+      display: flex; align-items: center; justify-content: center;
+      animation: eb-fade-in 0.2s ease;
+      cursor: pointer;
+    }
+    @keyframes eb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .eightball-ball {
+      width: min(78vw, 320px);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 36% 30%, #4a4a4a, #111 55%, #000 100%);
+      box-shadow: 0 0 0 5px #1a1a1a, 0 12px 60px rgba(0,0,0,0.8), inset 0 -6px 20px rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      cursor: default;
+      animation: eb-pop 0.45s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes eb-pop {
+      from { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+      to   { transform: scale(1)   rotate(0deg);   opacity: 1; }
+    }
+    .eightball-window {
+      width: 58%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #3466c8, #1a1a80 65%, #0a0a3a 100%);
+      box-shadow: inset 0 3px 10px rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.1rem;
+    }
+    .eightball-answer {
+      color: #ccdeff;
+      font-size: clamp(0.68rem, 3.2vw, 0.95rem);
+      font-weight: 800;
+      text-align: center;
+      font-family: var(--font-body);
+      line-height: 1.35;
+      text-shadow: 0 1px 6px rgba(0,0,80,0.9);
+    }
+    .eightball-label {
+      position: absolute;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: rgba(255,255,255,0.12);
+      font-family: var(--font-display, serif);
+      letter-spacing: -1px;
+      user-select: none;
+    }
+    .eightball-dismiss {
+      position: absolute;
+      bottom: -2.8rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.55);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      font-family: var(--font-body);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>🍽️ Dinner Planner</h1>
+    <p>Who's cooking what — the week at a glance</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <section class="section">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.5rem;">
+        <div>
+          <h2 class="section-title" style="margin-bottom:0.2rem;">🗓️ Dinner Schedule</h2>
+          <p class="text-muted" style="font-size:0.9rem;">7 nights, 7 incredible meals — fingers crossed 🤞</p>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <button class="btn btn-ghost" onclick="shakeEightBall()" title="Can't cook tonight? Ask the ball.">🎱 Dinner Excuse Generator</button>
+          <button class="btn btn-ghost" onclick="toggleEditMeals()">✏️ Edit Meals</button>
+        </div>
+      </div>
+
+      <!-- Meal Cards -->
+      <div class="meal-grid" id="mealGrid"></div>
+    </section>
+
+    <!-- ── ADMIN EDIT SECTION ──────────────────── -->
+    <section class="admin-section hidden" id="adminMealForm">
+      <div class="admin-section-title">⚙️ Edit Meal Assignments</div>
+      <p class="text-muted mb-2" style="font-size:0.9rem;">Changes save to this browser and sync to all family devices via Firebase (if configured).</p>
+      <div id="mealEditRows"></div>
+      <div class="flex flex-gap flex-wrap mt-2">
+        <button class="btn btn-primary" onclick="saveMeals()">💾 Save Changes</button>
+        <button class="btn btn-ghost"   onclick="resetMeals()">↩️ Reset to Defaults</button>
+      </div>
+      <p id="mealSaveMsg" class="success-text mt-1"></p>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('meals.html');
+    document.title = `${siteName()} — Meals`;
+
+    const STORAGE_KEY = 'bw_meals';
+
+    // ── Load meals ────────────────────────────────
+    function loadMeals() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(CONFIG.initialMeals));
+    }
+
+    function saveMeals() {
+      const rows   = document.querySelectorAll('.meal-edit-row');
+      const meals  = loadMeals();
+      rows.forEach((row, i) => {
+        meals[i].family = row.querySelector('[data-field="family"]').value.trim() || meals[i].family;
+        meals[i].dish   = row.querySelector('[data-field="dish"]').value.trim()   || meals[i].dish;
+        meals[i].notes  = row.querySelector('[data-field="notes"]').value.trim();
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(meals));
+      dbSet('meals', meals);
+      renderMeals();
+      const msg = document.getElementById('mealSaveMsg');
+      msg.textContent = '✅ Meals saved!';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    }
+
+    function resetMeals() {
+      if (!confirm('Reset all meals to the defaults in config.js? This cannot be undone.')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      dbSet('meals', JSON.parse(JSON.stringify(CONFIG.initialMeals)));
+      renderMeals();
+      buildEditForm();
+      document.getElementById('mealSaveMsg').textContent = '↩️ Reset to defaults.';
+      setTimeout(() => { document.getElementById('mealSaveMsg').textContent = ''; }, 3000);
+    }
+
+    // ── Render meal cards ─────────────────────────
+    function renderMeals() {
+      const meals = loadMeals();
+      const grid  = document.getElementById('mealGrid');
+      grid.innerHTML = '';
+      meals.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'meal-card';
+        card.innerHTML = `
+          <div class="meal-day">${m.day}</div>
+          <div class="meal-date">${m.date}</div>
+          <div class="meal-family">👨‍👩‍👧 ${m.family}</div>
+          <div class="meal-dish">${m.dish}</div>
+          ${m.notes ? `<div class="meal-notes">📝 ${m.notes}</div>` : ''}
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // ── Build admin edit form ─────────────────────
+    function buildEditForm() {
+      const meals   = loadMeals();
+      const container = document.getElementById('mealEditRows');
+      container.innerHTML = '';
+      meals.forEach((m, i) => {
+        const row = document.createElement('div');
+        row.className = 'meal-edit-row';
+        row.innerHTML = `
+          <h4>${m.day} · ${m.date}</h4>
+          <div class="row-grid">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Family / Cook</label>
+              <input class="form-input" data-field="family" value="${escHtml(m.family)}" placeholder="Who's cooking?" />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Dish</label>
+              <input class="form-input" data-field="dish" value="${escHtml(m.dish)}" placeholder="What's for dinner?" />
+            </div>
+          </div>
+          <div class="form-group mt-1" style="margin-bottom:0;">
+            <label class="form-label">Notes</label>
+            <input class="form-input" data-field="notes" value="${escHtml(m.notes || '')}" placeholder="Any details, allergies, sides…" />
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Easter Egg: Magic 8-Ball excuses ─────────
+    const EIGHT_BALL_EXCUSES = [
+      "The tide told me not to.",
+      "Mercury is in retrograde… and so is the oven.",
+      "I consulted the seagulls. They said no.",
+      "The beach vibes are incompatible with cooking.",
+      "Ask again after sunscreen application.",
+      "My flip flops are tied.",
+      "Outlook not so delicious.",
+      "The dolphins have spoken.",
+      "Cannot cook — currently in vacation mode.",
+      "Signs point to… ordering pizza.",
+      "The waves said to rest.",
+      "Try again when the sun goes down.",
+      "You may rely on the grill master instead.",
+      "The sand in my toes says absolutely not.",
+      "It is decidedly not my night.",
+      "Better not tell you now — I'm at the beach.",
+      "Concentrate and ask again… after a nap.",
+      "My seafood-to-chef ratio is off today.",
+      "Don't count on it. Count the pelicans instead.",
+      "The bonfire needs me more than the kitchen does.",
+    ];
+
+    function shakeEightBall() {
+      const answer  = EIGHT_BALL_EXCUSES[Math.floor(Math.random() * EIGHT_BALL_EXCUSES.length)];
+      const overlay = document.createElement('div');
+      overlay.className = 'eightball-overlay';
+      overlay.innerHTML = `
+        <div class="eightball-ball" onclick="event.stopPropagation()">
+          <div class="eightball-label">8</div>
+          <div class="eightball-window">
+            <div class="eightball-answer">${answer}</div>
+          </div>
+          <span class="eightball-dismiss">tap anywhere to dismiss</span>
+        </div>
+      `;
+      overlay.addEventListener('click', () => overlay.remove());
+      document.body.appendChild(overlay);
+    }
+
+    // ── Boot ──────────────────────────────────────
+    renderMeals(); // render immediately from localStorage
+    dbGet('meals').then(remote => {
+      if (!remote) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+      renderMeals();
+      if (!document.getElementById('adminMealForm').classList.contains('hidden')) buildEditForm();
+    });
+
+    function toggleEditMeals() {
+      const form = document.getElementById('adminMealForm');
+      const wasHidden = form.classList.contains('hidden');
+      form.classList.toggle('hidden');
+      if (wasHidden) { buildEditForm(); form.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    }
+  </script>
+</body>
+</html>

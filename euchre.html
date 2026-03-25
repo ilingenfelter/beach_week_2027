@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Euchre Tournament</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    .team-count-selector { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .team-count-btn {
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius);
+      border: 2px solid var(--sky-blue);
+      background: var(--white);
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: var(--ocean-deep);
+      transition: all 0.2s;
+    }
+    .team-count-btn.active {
+      background: var(--ocean-mid);
+      border-color: var(--ocean-mid);
+      color: var(--white);
+    }
+    .match-admin-select {
+      font-size: 0.78rem;
+      padding: 0.2rem 0.35rem;
+      border: 1px solid var(--sky-blue);
+      border-radius: 4px;
+      cursor: pointer;
+      background: var(--white);
+      font-family: var(--font-body);
+    }
+    .match-admin-select.winner-set {
+      background: var(--ocean-deep);
+      color: var(--white);
+      border-color: var(--ocean-deep);
+    }
+    .bracket-empty-notice {
+      background: var(--white);
+      border-radius: var(--card-radius);
+      padding: 2.5rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 2px dashed var(--sky-blue);
+    }
+    .round-name-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      text-align: center;
+      margin-top: 0.35rem;
+    }
+    .connector-v {
+      width: 1rem;
+      position: relative;
+      align-self: stretch;
+      flex-shrink: 0;
+    }
+    .connector-v::before {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 25%;
+      bottom: 25%;
+      width: 2px;
+      background: var(--sky-blue);
+    }
+    .connector-v::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100%;
+      height: 2px;
+      background: var(--sky-blue);
+    }
+    .bracket-spacer {
+      height: 1.5rem;
+      position: relative;
+    }
+    .bracket-spacer::before {
+      content: '';
+      position: absolute;
+      left: 0.5rem; right: 0.5rem;
+      top: 50%;
+      height: 2px;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>🃏 Euchre Tournament</h1>
+    <p>Single-elimination · Up to 22 teams</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Champion Banner (hidden until winner declared) -->
+    <div id="championBanner" class="champion-banner hidden">
+      <span class="trophy-icon">🏆</span>
+      <h2>Beach Week Euchre Champions!</h2>
+      <div class="champion-name" id="championName">—</div>
+    </div>
+
+    <!-- Bracket display -->
+    <section class="section">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.5rem;">
+        <h2 class="section-title" style="margin-bottom:0;">📊 Tournament Bracket</h2>
+        <button class="btn btn-ghost" onclick="toggleTournamentPanel()">⚙️ Tournament Setup</button>
+      </div>
+      <div id="bracketWrap"></div>
+    </section>
+
+    <!-- ── ADMIN PANEL ──────────────────────────── -->
+    <section class="admin-section hidden" id="adminEuchrePanel">
+      <div class="admin-section-title">⚙️ Tournament Setup</div>
+
+      <!-- Team count selector -->
+      <div class="form-group">
+        <label class="form-label">Number of Teams</label>
+        <div class="team-count-selector" id="teamCountSelector">
+          <button class="team-count-btn" data-count="4"  onclick="setTeamCount(4)">4 Teams</button>
+          <button class="team-count-btn" data-count="6"  onclick="setTeamCount(6)">6 Teams</button>
+          <button class="team-count-btn" data-count="8"  onclick="setTeamCount(8)">8 Teams</button>
+          <button class="team-count-btn" data-count="10" onclick="setTeamCount(10)">10 Teams</button>
+          <button class="team-count-btn" data-count="12" onclick="setTeamCount(12)">12 Teams</button>
+          <button class="team-count-btn" data-count="14" onclick="setTeamCount(14)">14 Teams</button>
+          <button class="team-count-btn" data-count="16" onclick="setTeamCount(16)">16 Teams</button>
+          <button class="team-count-btn" data-count="18" onclick="setTeamCount(18)">18 Teams</button>
+          <button class="team-count-btn" data-count="20" onclick="setTeamCount(20)">20 Teams</button>
+          <button class="team-count-btn" data-count="22" onclick="setTeamCount(22)">22 Teams</button>
+        </div>
+      </div>
+
+      <!-- Team name inputs -->
+      <div class="form-group">
+        <label class="form-label">Team Names <span style="font-weight:400;text-transform:none;letter-spacing:0;">(2 players each)</span></label>
+        <div class="team-inputs-grid" id="teamInputsGrid"></div>
+      </div>
+
+      <div class="flex flex-gap flex-wrap mb-2">
+        <button class="btn btn-primary" onclick="initBracket()">🚀 Start / Update Bracket</button>
+        <button class="btn btn-ghost"   onclick="clearBracket()">🗑️ Reset Tournament</button>
+      </div>
+
+      <hr style="border-color: var(--sky-blue); margin: 1.25rem 0;" />
+
+      <!-- Record match results -->
+      <div class="admin-section-title" style="margin-bottom:0.75rem;">📝 Record Match Results</div>
+      <p class="text-muted mb-2" style="font-size:0.88rem;">Select a winner for each match. Winners auto-advance to the next round.</p>
+      <div id="matchResultForms"></div>
+      <p id="bracketSaveMsg" class="success-text mt-1"></p>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('euchre.html');
+    document.title = `${siteName()} — Euchre`;
+
+    const BKT_KEY = 'bw_bracket';
+
+    // ── Bracket state schema ──────────────────────
+    // { teamCount, teams[], rounds[][] }
+    // rounds[r][m] = { t1, t2, winner }  (team names or null)
+
+    function loadBracket() {
+      const saved = localStorage.getItem(BKT_KEY);
+      return saved ? JSON.parse(saved) : null;
+    }
+    function saveBracket(data) {
+      localStorage.setItem(BKT_KEY, JSON.stringify(data));
+      dbSet('bracket', data);
+    }
+    function clearBracket() {
+      if (!confirm('Reset the entire tournament? All results will be lost.')) return;
+      localStorage.removeItem(BKT_KEY);
+      dbSet('bracket', null);
+      renderBracket();
+      renderMatchForms();
+      document.getElementById('championBanner').classList.add('hidden');
+      // Reset team count UI
+      setTeamCount(currentTeamCount, false);
+    }
+
+    // ── Round names ───────────────────────────────
+    function getRoundNames(numRounds) {
+      const finals   = ['Final', 'Semifinal', 'Quarterfinal', 'Round of 16', 'Round of 32'];
+      const names = [];
+      for (let i = numRounds - 1; i >= 0; i--) {
+        names.push(finals[i] || `Round ${numRounds - i}`);
+      }
+      return names; // index 0 = first round
+    }
+
+    // ── Calculate bracket structure ───────────────
+    // Returns the number of rounds and slot count for round 1
+    // Uses next power-of-2 >= teamCount, with byes filling the rest
+    function calcRounds(n) {
+      let slots = 1;
+      let rounds = 0;
+      while (slots < n) { slots *= 2; rounds++; }
+      return { slots, rounds };
+    }
+
+    // ── Init bracket ──────────────────────────────
+    let currentTeamCount = 8;
+
+    function setTeamCount(n, updateInputs = true) {
+      currentTeamCount = n;
+      document.querySelectorAll('.team-count-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.count) === n);
+      });
+      if (updateInputs) buildTeamInputs(n);
+    }
+
+    function buildTeamInputs(n) {
+      const grid = document.getElementById('teamInputsGrid');
+      grid.innerHTML = '';
+      for (let i = 0; i < n; i++) {
+        const wrap = document.createElement('div');
+        wrap.className = 'form-group';
+        wrap.style.marginBottom = '0';
+        wrap.innerHTML = `
+          <label class="form-label">Team ${i + 1}</label>
+          <input type="text" class="form-input team-name-input" placeholder="Player A &amp; Player B" maxlength="30" />
+        `;
+        grid.appendChild(wrap);
+      }
+      // Pre-fill from existing bracket if any
+      const existing = loadBracket();
+      if (existing && existing.teams) {
+        const inputs = grid.querySelectorAll('.team-name-input');
+        existing.teams.forEach((t, i) => { if (inputs[i]) inputs[i].value = t || ''; });
+      }
+    }
+
+    function initBracket() {
+      const inputs = document.querySelectorAll('.team-name-input');
+      const teams  = Array.from(inputs).map(inp => inp.value.trim() || `Team ${[...inputs].indexOf(inp) + 1}`);
+      const n      = teams.length;
+      const { slots, rounds } = calcRounds(n);
+
+      // Build round 1 matchups
+      const r1Matches = [];
+      for (let i = 0; i < slots / 2; i++) {
+        const t1 = teams[i * 2]     || null; // null = bye
+        const t2 = teams[i * 2 + 1] || null;
+        // Auto-advance if one side is a bye
+        const winner = (!t1 && t2) ? t2 : (!t2 && t1) ? t1 : null;
+        r1Matches.push({ t1: t1 || 'BYE', t2: t2 || 'BYE', winner });
+      }
+
+      // Build subsequent empty rounds
+      const allRounds = [r1Matches];
+      let prevSize = r1Matches.length;
+      for (let r = 1; r < rounds; r++) {
+        const size = prevSize / 2;
+        const matches = [];
+        for (let m = 0; m < size; m++) {
+          // Carry forward auto-advanced bye winners
+          const prevT1 = allRounds[r-1][m*2].winner;
+          const prevT2 = allRounds[r-1][m*2+1].winner;
+          const winner = (prevT1 && !prevT2) ? prevT1 : (!prevT1 && prevT2) ? prevT2 : null;
+          matches.push({ t1: prevT1 || null, t2: prevT2 || null, winner });
+        }
+        allRounds.push(matches);
+        prevSize = size;
+      }
+
+      const data = { teamCount: n, teams, rounds: allRounds };
+      saveBracket(data);
+      renderBracket();
+      renderMatchForms();
+
+      const msg = document.getElementById('bracketSaveMsg');
+      msg.textContent = '✅ Bracket initialized!';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    }
+
+    // ── Propagate winner through rounds ──────────
+    function recordResult(roundIdx, matchIdx, winner) {
+      const data = loadBracket();
+      if (!data) return;
+
+      data.rounds[roundIdx][matchIdx].winner = winner;
+
+      // Propagate to next round
+      if (roundIdx + 1 < data.rounds.length) {
+        const nextMatchIdx = Math.floor(matchIdx / 2);
+        const isTop        = matchIdx % 2 === 0;
+        if (isTop) {
+          data.rounds[roundIdx + 1][nextMatchIdx].t1 = winner;
+        } else {
+          data.rounds[roundIdx + 1][nextMatchIdx].t2 = winner;
+        }
+        // Clear downstream winner if we changed a prior result
+        data.rounds[roundIdx + 1][nextMatchIdx].winner = null;
+        // Cascade clear further rounds
+        for (let r = roundIdx + 2; r < data.rounds.length; r++) {
+          const midx = Math.floor(nextMatchIdx / Math.pow(2, r - roundIdx - 1));
+          if (data.rounds[r][midx]) {
+            data.rounds[r][midx].t1 = null;
+            data.rounds[r][midx].t2 = null;
+            data.rounds[r][midx].winner = null;
+          }
+        }
+      }
+
+      // Check for champion
+      const finalRound = data.rounds[data.rounds.length - 1];
+      const champion   = finalRound[0].winner;
+      saveBracket(data);
+      renderBracket();
+      renderMatchForms();
+
+      if (champion) {
+        document.getElementById('championBanner').classList.remove('hidden');
+        document.getElementById('championName').textContent = champion;
+        document.getElementById('championBanner').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        document.getElementById('championBanner').classList.add('hidden');
+      }
+
+      const msg = document.getElementById('bracketSaveMsg');
+      msg.textContent = '✅ Result saved!';
+      setTimeout(() => { msg.textContent = ''; }, 2500);
+    }
+
+    // ── Render the bracket visually ───────────────
+    function renderBracket() {
+      const data = loadBracket();
+      const wrap = document.getElementById('bracketWrap');
+
+      if (!data || !data.rounds || data.rounds.length === 0) {
+        wrap.innerHTML = `
+          <div class="bracket-empty-notice">
+            <span style="font-size:2.5rem; display:block; margin-bottom:0.75rem;">🃏</span>
+            <strong>Tournament hasn't started yet!</strong>
+            <p class="text-muted mt-1">Use the "Tournament Setup" button above to enter teams and start the bracket.</p>
+          </div>`;
+        return;
+      }
+
+      const numRounds  = data.rounds.length;
+      const roundNames = getRoundNames(numRounds);
+
+      let html = '<div class="bracket-scroll"><div class="bracket" id="bracketInner">';
+
+      data.rounds.forEach((round, rIdx) => {
+        const numMatches = round.length;
+        const roundName  = roundNames[rIdx];
+
+        html += `<div class="bracket-round">`;
+        html += `<div class="round-header">${roundName}</div>`;
+        html += `<div class="round-matches" style="justify-content: space-around; gap: ${rIdx > 0 ? (rIdx * 1.5) : 0.75}rem;">`;
+
+        round.forEach((match, mIdx) => {
+          const t1IsWinner = match.winner && match.winner === match.t1;
+          const t2IsWinner = match.winner && match.winner === match.t2;
+          const t1TBD      = !match.t1 || match.t1 === 'BYE';
+          const t2TBD      = !match.t2 || match.t2 === 'BYE';
+          const isBye      = match.t1 === 'BYE' || match.t2 === 'BYE';
+
+          html += `
+            <div class="match-card${isBye ? ' bye-match' : ''}">
+              <div class="match-team ${t1IsWinner ? 'winner' : ''} ${t1TBD && !isBye ? 'tbd' : ''}">
+                ${escHtml(match.t1 || 'TBD')}
+                ${t1IsWinner ? '<span>🏆</span>' : ''}
+              </div>
+              <div class="match-team ${t2IsWinner ? 'winner' : ''} ${t2TBD && !isBye ? 'tbd' : ''}">
+                ${escHtml(match.t2 || 'TBD')}
+                ${t2IsWinner ? '<span>🏆</span>' : ''}
+              </div>
+            </div>
+          `;
+
+          // Add vertical spacer between match pairs (for bracket tree visual)
+          if (mIdx % 2 === 1 && mIdx < round.length - 1) {
+            html += `<div style="height: ${rIdx * 0.75 + 0.5}rem;"></div>`;
+          }
+        });
+
+        html += `</div></div>`; // round-matches, bracket-round
+
+        // Connector line between rounds
+        if (rIdx < numRounds - 1) {
+          html += `<div style="width:1.25rem; align-self: center;"></div>`;
+        }
+      });
+
+      // Champion slot
+      const champion = data.rounds[numRounds - 1][0]?.winner;
+      html += `
+        <div class="bracket-round" style="justify-content:center; display:flex; flex-direction:column;">
+          <div class="round-header">🏆 Champion</div>
+          <div class="round-matches" style="align-items:center;">
+            <div class="match-card" style="border-color: var(--sand); border-width: 3px;">
+              <div class="match-team ${champion ? 'winner' : 'tbd'}">
+                ${champion ? `🏆 ${escHtml(champion)}` : 'TBD'}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      html += '</div></div>'; // bracket, bracket-scroll
+      wrap.innerHTML = html;
+    }
+
+    // ── Render admin match result forms ───────────
+    function renderMatchForms() {
+      const data      = loadBracket();
+      const container = document.getElementById('matchResultForms');
+      if (!container) return;
+      if (!data || !data.rounds) { container.innerHTML = '<p class="text-muted">Initialize the bracket first.</p>'; return; }
+
+      const numRounds  = data.rounds.length;
+      const roundNames = getRoundNames(numRounds);
+      let html = '';
+
+      data.rounds.forEach((round, rIdx) => {
+        html += `<div style="margin-bottom:1.25rem;">`;
+        html += `<div style="font-weight:800; color:var(--ocean-mid); font-size:0.9rem; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">${roundNames[rIdx]}</div>`;
+        html += `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:0.5rem;">`;
+
+        round.forEach((match, mIdx) => {
+          if (match.t1 === 'BYE' || match.t2 === 'BYE') return; // skip byes
+
+          const t1 = match.t1 || 'TBD';
+          const t2 = match.t2 || 'TBD';
+          const both = match.t1 && match.t2 && match.t1 !== 'BYE' && match.t2 !== 'BYE';
+
+          html += `
+            <div style="background:var(--white); border-radius:var(--radius); padding:0.75rem; border:1px solid var(--sky-blue);">
+              <div style="font-size:0.8rem; color:var(--text-light); margin-bottom:0.35rem;">Match ${mIdx + 1}</div>
+              <div style="font-size:0.88rem; font-weight:600; margin-bottom:0.45rem;">
+                ${escHtml(t1)} <span style="color:var(--text-light);">vs</span> ${escHtml(t2)}
+              </div>
+              <select class="match-admin-select${match.winner ? ' winner-set' : ''}"
+                onchange="recordResult(${rIdx}, ${mIdx}, this.value)"
+                ${!both ? 'disabled' : ''}>
+                <option value="">— Pick winner —</option>
+                <option value="${escHtml(t1)}" ${match.winner === match.t1 ? 'selected' : ''}>${escHtml(t1)}</option>
+                <option value="${escHtml(t2)}" ${match.winner === match.t2 ? 'selected' : ''}>${escHtml(t2)}</option>
+              </select>
+            </div>
+          `;
+        });
+
+        html += '</div></div>';
+      });
+
+      container.innerHTML = html || '<p class="text-muted">No matches to display.</p>';
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Boot ──────────────────────────────────────
+    const existing = loadBracket();
+    if (existing) {
+      currentTeamCount = existing.teamCount || 8;
+    }
+
+    renderBracket();
+
+    // Check champion on load
+    if (existing) {
+      const finalRound = existing.rounds?.[existing.rounds.length - 1];
+      const champion   = finalRound?.[0]?.winner;
+      if (champion) {
+        document.getElementById('championBanner').classList.remove('hidden');
+        document.getElementById('championName').textContent = champion;
+      }
+    }
+
+    // Sync from Firebase on load
+    dbGet('bracket').then(remote => {
+      if (!remote) return;
+      localStorage.setItem(BKT_KEY, JSON.stringify(remote));
+      currentTeamCount = remote.teamCount || currentTeamCount;
+      renderBracket();
+      const finalRound = remote.rounds?.[remote.rounds.length - 1];
+      const champ = finalRound?.[0]?.winner;
+      if (champ) {
+        document.getElementById('championBanner').classList.remove('hidden');
+        document.getElementById('championName').textContent = champ;
+      } else {
+        document.getElementById('championBanner').classList.add('hidden');
+      }
+    });
+
+    function toggleTournamentPanel() {
+      const panel   = document.getElementById('adminEuchrePanel');
+      const wasHidden = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden');
+      if (wasHidden) {
+        setTeamCount(currentTeamCount, true);
+        buildTeamInputs(currentTeamCount);
+        renderMatchForms();
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  </script>
+</body>
+</html>

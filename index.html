@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Home</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    /* ── Easter Egg: Countdown Panic Mode ── */
+    @keyframes panic-shake {
+      0%,100% { transform: translate(0,0) rotate(0deg); }
+      20%     { transform: translate(-5px, 2px) rotate(-2deg); }
+      40%     { transform: translate(5px,-2px) rotate(2deg); }
+      60%     { transform: translate(-4px, 3px) rotate(-1deg); }
+      80%     { transform: translate(4px,-1px) rotate(1deg); }
+    }
+    @keyframes panic-flash {
+      0%,100% { color: var(--coral); text-shadow: 0 0 18px rgba(231,111,81,0.9); }
+      50%     { color: #e63946;      text-shadow: 0 0 30px rgba(230,57,70,1); }
+    }
+    @keyframes panic-label-pulse {
+      0%,100% { transform: scale(1);    color: #e63946; }
+      50%     { transform: scale(1.08); color: #ff6b35; }
+    }
+    .panic-mode {
+      animation: panic-shake 0.12s infinite;
+    }
+    .panic-mode .countdown-value {
+      animation: panic-flash 0.15s infinite !important;
+      font-size: 3.2rem !important;
+    }
+    #countdownLabel.panic-label {
+      animation: panic-label-pulse 0.2s infinite;
+      font-size: 1.4rem !important;
+      font-weight: 900;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── HERO BANNER ───────────────────────────── -->
+  <section class="hero">
+    <h1 class="hero-title" id="heroTitle">🏖️ Beach Week</h1>
+    <p class="hero-subtitle">The whole family, together again!</p>
+    <p class="hero-dates" id="heroDates">📅 Loading dates…</p>
+    <p class="hero-location" id="heroLocation">📍 Outer Banks, NC</p>
+  </section>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Countdown Timer -->
+    <section class="countdown-section">
+      <div class="countdown-label-text" id="countdownLabel">⏳ Counting down to beach week…</div>
+      <div class="countdown-timer" id="countdownTimer">
+        <div class="countdown-unit">
+          <div class="countdown-value" id="cdDays">--</div>
+          <div class="countdown-unit-label">Days</div>
+        </div>
+        <div class="countdown-unit">
+          <div class="countdown-value" id="cdHours">--</div>
+          <div class="countdown-unit-label">Hours</div>
+        </div>
+        <div class="countdown-unit">
+          <div class="countdown-value" id="cdMinutes">--</div>
+          <div class="countdown-unit-label">Mins</div>
+        </div>
+        <div class="countdown-unit">
+          <div class="countdown-value" id="cdSeconds">--</div>
+          <div class="countdown-unit-label">Secs</div>
+        </div>
+      </div>
+      <p class="countdown-message hidden" id="countdownMsg"></p>
+    </section>
+
+    <!-- House Info Cards -->
+    <section class="section">
+      <h2 class="section-title">🏡 House Info &amp; Logistics</h2>
+      <p class="section-subtitle">Everything you need for a smooth arrival and a great stay.</p>
+      <div class="info-grid" id="infoGrid"></div>
+    </section>
+
+    <!-- Quick Links -->
+    <section class="section">
+      <h2 class="section-title">🔗 Quick Links</h2>
+      <div class="flex flex-wrap flex-gap">
+        <a href="meals.html"      class="btn btn-primary">🍽️ View Meal Schedule</a>
+        <a href="activities.html" class="btn btn-secondary">🗳️ Vote on Activities</a>
+        <a href="photos.html"     class="btn btn-coral">📸 Photo Wall</a>
+        <a href="weather.html"    class="btn btn-ghost">🌊 Weather &amp; Tides</a>
+        <a href="euchre.html"     class="btn btn-ghost">🃏 Euchre Tournament</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('index.html');
+
+    // Hero content from config
+    document.getElementById('heroTitle').textContent    = `🏖️ ${siteName()}`;
+    document.getElementById('heroDates').textContent    = `📅 ${CONFIG.dates.start} – ${CONFIG.dates.end}`;
+    document.getElementById('heroLocation').textContent = `📍 ${CONFIG.location}`;
+    document.title = `${siteName()} — Home`;
+
+    // ── Info cards ────────────────────────────────
+    const wifiComingSoon = CONFIG.house.wifi.network === 'Coming Soon';
+    const CARDS = [
+      { icon: '📍', title: 'House Address',        value: CONFIG.house.address },
+      { icon: '🏠', title: 'Rental Website',       value: CONFIG.house.name, link: CONFIG.house.website },
+      { icon: '🔑', title: 'Check-In / Check-Out', value: `Check-in: ${CONFIG.house.checkin}\nCheck-out: ${CONFIG.house.checkout}` },
+      { icon: '📶', title: 'WiFi Network',          value: CONFIG.house.wifi.network,  mono: !wifiComingSoon },
+      { icon: '🔒', title: 'WiFi Password',         value: CONFIG.house.wifi.password, mono: !wifiComingSoon },
+      { icon: '🛒', title: 'Nearest Grocery',       value: CONFIG.house.grocery },
+      { icon: '🏥', title: 'Urgent Care / Hospital',value: CONFIG.house.urgentCare }
+    ];
+
+    const grid = document.getElementById('infoGrid');
+    CARDS.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      const valueHtml = c.link
+        ? `<a href="${c.link}" target="_blank" rel="noopener" class="card-value" style="display:inline-block; color:var(--ocean-mid); font-weight:700;">${c.value} ↗</a>`
+        : `<div class="card-value${c.mono ? ' mono' : ''}">${c.value}</div>`;
+      div.innerHTML = `
+        <div class="card-icon">${c.icon}</div>
+        <div class="card-title">${c.title}</div>
+        ${valueHtml}
+      `;
+      grid.appendChild(div);
+    });
+
+    // ── Countdown timer ───────────────────────────
+    function updateCountdown() {
+      const target = new Date(CONFIG.dates.startISO + 'T16:00:00');
+      const end    = new Date(CONFIG.dates.endISO   + 'T10:00:00');
+      const now    = new Date();
+      const timer  = document.getElementById('countdownTimer');
+      const msg    = document.getElementById('countdownMsg');
+      const label  = document.getElementById('countdownLabel');
+
+      if (now >= target && now <= end) {
+        timer.classList.add('hidden');
+        msg.classList.remove('hidden');
+        msg.textContent = '🎉 BEACH WEEK IS HERE! Enjoy every moment! 🌊';
+        label.textContent = '🏖️ It\'s Beach Week!';
+        return;
+      }
+      if (now > end) {
+        timer.classList.add('hidden');
+        msg.classList.remove('hidden');
+        msg.textContent = '📸 What an amazing week — see you next year! 🌊';
+        label.textContent = '😢 Until Next Year…';
+        return;
+      }
+
+      const diff = target - now;
+      const days    = Math.floor(diff / 864e5);
+      const hours   = Math.floor((diff % 864e5) / 36e5);
+      const minutes = Math.floor((diff % 36e5)  / 6e4);
+      const seconds = Math.floor((diff % 6e4)   / 1e3);
+
+      document.getElementById('cdDays').textContent    = String(days).padStart(2, '0');
+      document.getElementById('cdHours').textContent   = String(hours).padStart(2, '0');
+      document.getElementById('cdMinutes').textContent = String(minutes).padStart(2, '0');
+      document.getElementById('cdSeconds').textContent = String(seconds).padStart(2, '0');
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    // ── Easter Egg: Countdown Panic Mode ──────────
+    (function() {
+      let clicks    = 0;
+      let active    = false;
+      let resetTimer = null;
+      const timerEl = document.getElementById('countdownTimer');
+      const labelEl = document.getElementById('countdownLabel');
+
+      timerEl.style.cursor = 'pointer';
+
+      timerEl.addEventListener('click', function() {
+        if (active) return;
+        clicks++;
+        // Reset click count if they stop clicking for 2.5s
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => { clicks = 0; }, 2500);
+        if (clicks >= 10) {
+          clicks = 0;
+          triggerPanic();
+        }
+      });
+
+      function triggerPanic() {
+        active = true;
+        const origLabel = labelEl.textContent;
+
+        // Dramatic label
+        labelEl.textContent = '😱 TOO MANY DAYS!!';
+        labelEl.classList.add('panic-label');
+        timerEl.classList.add('panic-mode');
+
+        // Spin the numbers like they've lost their minds
+        const spinInterval = setInterval(() => {
+          document.getElementById('cdDays').textContent    = String(Math.floor(Math.random() * 99999)).padStart(5, '0');
+          document.getElementById('cdHours').textContent   = String(Math.floor(Math.random() * 99)).padStart(2, '0');
+          document.getElementById('cdMinutes').textContent = String(Math.floor(Math.random() * 99)).padStart(2, '0');
+          document.getElementById('cdSeconds').textContent = String(Math.floor(Math.random() * 99)).padStart(2, '0');
+        }, 40);
+
+        // Confetti!
+        dropConfetti();
+
+        // Reset after 4 seconds
+        setTimeout(() => {
+          clearInterval(spinInterval);
+          labelEl.textContent = origLabel;
+          labelEl.classList.remove('panic-label');
+          timerEl.classList.remove('panic-mode');
+          updateCountdown(); // restore real values
+          active = false;
+        }, 4000);
+      }
+
+      // ── Canvas confetti ───────────────────────────
+      function dropConfetti() {
+        const canvas = document.createElement('canvas');
+        canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9990;';
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        const COLORS = ['#ffd166','#e76f51','#06d6a0','#118ab2','#ef476f','#f4d35e','#ee964b','#a8dadc'];
+        const pieces = Array.from({ length: 160 }, () => ({
+          x:        Math.random() * canvas.width,
+          y:        -10 - Math.random() * 300,
+          w:        7 + Math.random() * 9,
+          h:        4 + Math.random() * 7,
+          color:    COLORS[Math.floor(Math.random() * COLORS.length)],
+          rot:      Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.18,
+          vx:       (Math.random() - 0.5) * 3.5,
+          vy:       3.5 + Math.random() * 5,
+          gravity:  0.08 + Math.random() * 0.06,
+        }));
+
+        let frame = 0;
+        const MAX_FRAMES = 200; // ~3.3s at 60fps
+
+        (function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          pieces.forEach(p => {
+            p.vy  += p.gravity;
+            p.x   += p.vx;
+            p.y   += p.vy;
+            p.rot += p.rotSpeed;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+          });
+          frame++;
+          if (frame < MAX_FRAMES) requestAnimationFrame(animate);
+          else canvas.remove();
+        })();
+      }
+    })();
+  </script>
+</body>
+</html>

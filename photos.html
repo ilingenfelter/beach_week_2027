@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Photo Wall</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    #uploadPreview {
+      max-width: 220px;
+      max-height: 160px;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      display: none;
+      border: 2px solid var(--sky-blue);
+    }
+    .photo-count-badge {
+      background: var(--ocean-mid);
+      color: #fff;
+      border-radius: 99px;
+      padding: 0.15rem 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>📸 Photo Wall</h1>
+    <p>Share the moments — captured forever</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Storage notice -->
+    <div class="local-storage-note">
+      <span>ℹ️</span>
+      <span>Photos are stored in <strong>your browser's local storage</strong> — they appear only on this device. Share the photo files directly with family using the download buttons below.</span>
+    </div>
+
+    <!-- Header row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.5rem;">
+      <div>
+        <h2 class="section-title" style="margin-bottom:0;">Beach Week Memories <span class="photo-count-badge" id="photoCount">0</span></h2>
+      </div>
+      <button class="btn btn-coral" onclick="toggleUploadForm()">📷 Add a Photo</button>
+    </div>
+
+    <!-- Photo Grid -->
+    <div id="photoGrid" class="photo-grid"></div>
+    <div id="photoEmpty" class="photo-empty hidden">
+      <span class="big-icon">📷</span>
+      <strong>No photos yet!</strong>
+      <p class="mt-1">Be the first to add a beach memory.</p>
+    </div>
+
+    <!-- ── UPLOAD FORM (admin-gated) ───────────── -->
+    <section class="admin-section hidden mt-3" id="photoUploadForm">
+      <div class="admin-section-title">📷 Upload a Photo</div>
+      <div class="form-group">
+        <label class="form-label">Photo</label>
+        <input type="file" id="photoFileInput" class="form-input" accept="image/*" />
+        <img id="uploadPreview" alt="Preview" />
+        <p class="form-hint">Large photos will be resized automatically. Max recommended: 10 MB.</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" id="photoName" class="form-input" placeholder="e.g. Uncle Bob" maxlength="60" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Caption</label>
+        <input type="text" id="photoCaption" class="form-input" placeholder="e.g. Best sunrise of the trip!" maxlength="140" />
+      </div>
+      <p id="uploadError" class="error-text"></p>
+      <div class="flex flex-gap flex-wrap">
+        <button class="btn btn-primary" onclick="uploadPhoto()">✅ Add to Wall</button>
+        <button class="btn btn-ghost"   onclick="clearUploadForm()">✕ Clear</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('photos.html');
+    document.title = `${siteName()} — Photos`;
+
+    const PHOTO_KEY = 'bw_photos';
+    const MAX_DIMENSION = 1200; // px — resize canvas to this if larger
+
+    // ── Load / save photos ────────────────────────
+    function loadPhotos() {
+      try { return JSON.parse(localStorage.getItem(PHOTO_KEY)) || []; }
+      catch(e) { return []; }
+    }
+    function savePhotos(arr) {
+      try {
+        localStorage.setItem(PHOTO_KEY, JSON.stringify(arr));
+      } catch(e) {
+        alert('Storage full! Try deleting some photos or downloading them first.');
+      }
+    }
+
+    // ── Render grid ───────────────────────────────
+    function renderPhotos() {
+      const photos = loadPhotos();
+      const grid   = document.getElementById('photoGrid');
+      const empty  = document.getElementById('photoEmpty');
+      const badge  = document.getElementById('photoCount');
+      grid.innerHTML = '';
+      badge.textContent = photos.length;
+
+      if (photos.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      photos.slice().reverse().forEach((p, revIdx) => {
+        const realIdx = photos.length - 1 - revIdx;
+        const item = document.createElement('div');
+        item.className = 'photo-item';
+        item.innerHTML = `
+          <img src="${p.dataUrl}" alt="${escHtml(p.caption || 'Beach photo')}" loading="lazy" />
+          <div class="photo-caption">
+            <div class="photo-name">${escHtml(p.name)}</div>
+            ${p.caption ? `<div class="photo-text">${escHtml(p.caption)}</div>` : ''}
+            <div class="photo-actions">
+              <a href="${p.dataUrl}" download="beach-week-photo-${realIdx + 1}.jpg" class="btn btn-sm btn-ghost">⬇️ Download</a>
+              <button class="btn btn-sm btn-danger" onclick="deletePhoto(${realIdx})">🗑️ Delete</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(item);
+      });
+    }
+
+    // ── Delete photo ──────────────────────────────
+    function deletePhoto(index) {
+      if (!confirm('Delete this photo?')) return;
+      const photos = loadPhotos();
+      photos.splice(index, 1);
+      savePhotos(photos);
+      renderPhotos();
+    }
+
+    // ── Resize image via canvas ───────────────────
+    function resizeImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          let { width, height } = img;
+          if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+            const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+            width  = Math.round(width  * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width  = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          callback(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ── Preview on file select ────────────────────
+    document.getElementById('photoFileInput').addEventListener('change', function() {
+      const file    = this.files[0];
+      const preview = document.getElementById('uploadPreview');
+      if (!file) { preview.style.display = 'none'; return; }
+      resizeImage(file, dataUrl => {
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+      });
+    });
+
+    // ── Upload photo ──────────────────────────────
+    function uploadPhoto() {
+      const file    = document.getElementById('photoFileInput').files[0];
+      const name    = document.getElementById('photoName').value.trim();
+      const caption = document.getElementById('photoCaption').value.trim();
+      const errEl   = document.getElementById('uploadError');
+
+      errEl.textContent = '';
+      if (!file)  { errEl.textContent = 'Please select a photo.'; return; }
+      if (!name)  { errEl.textContent = 'Please enter your name.'; return; }
+
+      resizeImage(file, dataUrl => {
+        const photos = loadPhotos();
+        photos.push({ name, caption, dataUrl, ts: Date.now() });
+        savePhotos(photos);
+        renderPhotos();
+        clearUploadForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    function clearUploadForm() {
+      document.getElementById('photoFileInput').value = '';
+      document.getElementById('photoName').value      = '';
+      document.getElementById('photoCaption').value   = '';
+      document.getElementById('uploadPreview').style.display = 'none';
+      document.getElementById('uploadError').textContent     = '';
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toggleUploadForm() {
+      document.getElementById('photoUploadForm').classList.toggle('hidden');
+    }
+
+    // ── Boot ──────────────────────────────────────
+    renderPhotos();
+  </script>
+</body>
+</html>
