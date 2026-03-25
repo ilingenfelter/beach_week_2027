@@ -49,13 +49,13 @@ const CONFIG = {
   // ── INITIAL MEAL SCHEDULE ────────────────────
   // Edit these to set your dinner assignments
   initialMeals: [
-    { day: "Saturday",  date: "Jul 10", family: "The Johnsons",  dish: "Welcome BBQ 🍔",      notes: "Burgers, hot dogs & potato salad — first night tradition!" },
-    { day: "Sunday",    date: "Jul 11", family: "The Smiths",    dish: "Taco Night 🌮",        notes: "All the fixings, make your own" },
-    { day: "Monday",    date: "Jul 12", family: "The Williams",  dish: "Seafood Pasta 🦐",     notes: "Fresh shrimp from the Wanchese docks" },
-    { day: "Tuesday",   date: "Jul 13", family: "The Garcias",   dish: "Carolina BBQ 🐷",      notes: "Pulled pork, mac & cheese, collard greens" },
-    { day: "Wednesday", date: "Jul 14", family: "The Millers",   dish: "Pizza Night 🍕",       notes: "Homemade dough — kids take over the kitchen!" },
-    { day: "Thursday",  date: "Jul 15", family: "The Davises",   dish: "Fish Tacos 🐟",        notes: "Catch of the day (hopefully!) or market backup" },
-    { day: "Friday",    date: "Jul 16", family: "The Wilsons",   dish: "Farewell Cookout 🎉",  notes: "Last night — everyone's favorites on the grill" }
+    { day: "Saturday",  date: "Jul 10", family: "TBD",  dish: "Coming Soon 🍔",      notes: "Coming Soon!" },
+    { day: "Sunday",    date: "Jul 11", family: "TBD",    dish: "Coming Soon 🌮",        notes: "Coming Soon!" },
+    { day: "Monday",    date: "Jul 12", family: "TBD",  dish: "Coming Soon 🦐",     notes: "Coming Soon!" },
+    { day: "Tuesday",   date: "Jul 13", family: "TBD",   dish: "Coming Soon 🐷",      notes: "Coming Soon!" },
+    { day: "Wednesday", date: "Jul 14", family: "TBD",   dish: "Coming Soon 🍕",       notes: "Coming Soon!" },
+    { day: "Thursday",  date: "Jul 15", family: "TBD",   dish: "Coming Soon 🐟",        notes: "Coming Soon!" },
+    { day: "Friday",    date: "Jul 16", family: "TBD",   dish: "Coming Soon",  notes: "Coming Soon!" }
   ],
 
   // ── INITIAL ACTIVITY PROPOSALS ───────────────
