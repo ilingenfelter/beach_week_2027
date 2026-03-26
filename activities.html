@@ -165,17 +165,18 @@
       renderSignups(actId, act.signups);
     }
 
+    function signupsHtml(actId, signups) {
+      return signups.length === 0
+        ? '<span class="signup-empty">No one yet — be the first!</span>'
+        : signups.map(n =>
+            `<span class="signup-chip">${escHtml(n)}<button class="signup-chip-remove" onclick="removeSignup('${escHtml(actId)}','${escHtml(n)}')" title="Remove">✕</button></span>`
+          ).join('');
+    }
+
     function renderSignups(actId, signups) {
       const container = document.getElementById('sl-' + actId);
       if (!container) return;
-      container.innerHTML = signups.length === 0
-        ? '<span class="signup-empty">No one yet — be the first!</span>'
-        : signups.map(n =>
-            `<span class="signup-chip">
-              ${escHtml(n)}
-              <button class="signup-chip-remove" onclick="removeSignup('${escHtml(actId)}','${escHtml(n)}')" title="Remove">✕</button>
-            </span>`
-          ).join('');
+      container.innerHTML = signupsHtml(actId, signups);
     }
 
     // ── Remove activity ───────────────────────────
@@ -242,7 +243,7 @@
         <div class="activity-proposed-by">💡 Proposed by ${escHtml(act.proposedBy)}</div>
         <div class="signup-section">
           <div class="signup-label">Who's in?</div>
-          <div class="signup-chips" id="sl-${act.id}"></div>
+          <div class="signup-chips" id="sl-${act.id}">${signupsHtml(act.id, act.signups)}</div>
           <div class="signup-input-row">
             <input
               type="text"
@@ -256,7 +257,6 @@
           </div>
         </div>
       `;
-      renderSignups(act.id, act.signups);
       return card;
     }
 
