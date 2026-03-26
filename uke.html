@@ -128,13 +128,13 @@
       <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
-        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
         <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
-        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
-        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
         <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
-        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
         <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
         <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Feedback</a></li>
       </ul>
     </div>
@@ -142,7 +142,7 @@
 
   <!-- ── PAGE HEADER ───────────────────────────── -->
   <header class="page-header">
-    <h1>🎸 Ukulele Jams</h1>
+    <h1><span id="ukeEggTrigger" style="cursor:pointer;" title="🤫">🎸</span> Ukulele Jams</h1>
     <p>Suggest songs, vote for your favorites, and strum along all week</p>
   </header>
 
@@ -187,7 +187,6 @@
       <p id="songError" class="error-text"></p>
       <div class="flex flex-gap flex-wrap">
         <button class="btn btn-primary" onclick="addSong()">✅ Add Song</button>
-        <button class="btn btn-danger"  onclick="clearAllSongs()">🗑️ Reset All</button>
       </div>
     </section>
 
@@ -306,14 +305,6 @@
       setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 2500);
     }
 
-    function clearAllSongs() {
-      if (!confirm('Reset all songs back to the defaults from config.js?')) return;
-      localStorage.removeItem(UKE_KEY);
-      localStorage.removeItem(VOTES_KEY);
-      dbSet('songs', null);
-      renderSongs();
-    }
-
     // ── Render ────────────────────────────────────
     function renderSongs() {
       const songs   = loadSongs();
@@ -389,6 +380,212 @@
       localStorage.setItem(UKE_KEY, JSON.stringify(arr));
       renderSongs();
     });
+
+    // ── 🎸 Easter Egg: Sunset Beach Scene ─────────
+    document.getElementById('ukeEggTrigger').addEventListener('click', triggerUkeEgg);
+
+    function triggerUkeEgg() {
+      if (document.getElementById('uke-egg')) return;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'uke-egg';
+      Object.assign(overlay.style, {
+        position: 'fixed', inset: '0', zIndex: '9999',
+        opacity: '0', cursor: 'pointer',
+        transition: 'opacity 0.7s ease',
+      });
+
+      const canvas = document.createElement('canvas');
+      Object.assign(canvas.style, { display: 'block', width: '100%', height: '100%' });
+      overlay.appendChild(canvas);
+      document.body.appendChild(overlay);
+
+      let rafId, gone = false;
+
+      function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const autoTimer = setTimeout(dismiss, 7000);
+
+      function dismiss() {
+        if (gone) return;
+        gone = true;
+        clearTimeout(autoTimer);
+        overlay.style.transition = 'opacity 0.65s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          cancelAnimationFrame(rafId);
+          window.removeEventListener('resize', resize);
+          overlay.remove();
+        }, 700);
+      }
+
+      overlay.addEventListener('click', dismiss);
+      requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+      function draw(ts) {
+        if (gone) return;
+        const W = canvas.width, H = canvas.height;
+        const ctx = canvas.getContext('2d');
+
+        const horizY = H * 0.50;
+        const sandY  = H * 0.76;
+
+        // ── Sky ──────────────────────────────────────
+        const skyG = ctx.createLinearGradient(0, 0, 0, horizY);
+        skyG.addColorStop(0,    '#0e071c');
+        skyG.addColorStop(0.30, '#3a1058');
+        skyG.addColorStop(0.68, '#b83010');
+        skyG.addColorStop(1,    '#e86010');
+        ctx.fillStyle = skyG;
+        ctx.fillRect(0, 0, W, horizY);
+
+        // ── Stars ────────────────────────────────────
+        const STARS = [
+          [0.07,0.06],[0.16,0.13],[0.27,0.04],[0.40,0.10],
+          [0.54,0.05],[0.67,0.16],[0.76,0.07],[0.87,0.11],
+          [0.11,0.21],[0.50,0.17],[0.93,0.19],[0.32,0.14],
+        ];
+        STARS.forEach(([sx, sy]) => {
+          ctx.globalAlpha = 0.35 + 0.50 * Math.sin(ts * 0.0014 + sx * 17);
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(sx * W, sy * H, 1.3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        // ── Sun ──────────────────────────────────────
+        const sunX = W * 0.62;
+        const sunR = Math.min(W, H) * 0.058;
+
+        const glowG = ctx.createRadialGradient(sunX, horizY, 0, sunX, horizY, sunR * 5.5);
+        glowG.addColorStop(0,    'rgba(255,175,35,0.38)');
+        glowG.addColorStop(0.45, 'rgba(255,85,10,0.13)');
+        glowG.addColorStop(1,    'rgba(0,0,0,0)');
+        ctx.fillStyle = glowG;
+        ctx.fillRect(sunX - sunR*6, horizY - sunR*6, sunR*12, sunR*12);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, W, horizY + 1);
+        ctx.clip();
+        const sunG = ctx.createRadialGradient(sunX, horizY, 0, sunX, horizY, sunR);
+        sunG.addColorStop(0,    '#fff8b0');
+        sunG.addColorStop(0.38, '#ffcc00');
+        sunG.addColorStop(1,    '#ff5500');
+        ctx.fillStyle = sunG;
+        ctx.beginPath();
+        ctx.arc(sunX, horizY, sunR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // ── Ocean ────────────────────────────────────
+        const oceanG = ctx.createLinearGradient(0, horizY, 0, sandY);
+        oceanG.addColorStop(0, '#152d48');
+        oceanG.addColorStop(1, '#08131e');
+        ctx.fillStyle = oceanG;
+        ctx.fillRect(0, horizY, W, sandY - horizY);
+
+        // Sun reflection on water
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(sunX - sunR * 0.45, horizY);
+        ctx.lineTo(sunX + sunR * 0.45, horizY);
+        ctx.lineTo(sunX + sunR * 4,    sandY);
+        ctx.lineTo(sunX - sunR * 4,    sandY);
+        ctx.closePath();
+        const refG = ctx.createLinearGradient(0, horizY, 0, sandY);
+        refG.addColorStop(0, 'rgba(255,170,30,0.38)');
+        refG.addColorStop(1, 'rgba(255,110,10,0.06)');
+        ctx.fillStyle = refG;
+        ctx.fill();
+        ctx.restore();
+
+        // ── Waves ────────────────────────────────────
+        for (let i = 0; i < 5; i++) {
+          const t     = i / 5;
+          const wy    = horizY + (sandY - horizY) * (0.08 + t * 0.82);
+          const amp   = 2.5 + t * 9;
+          const freq  = 0.013 - t * 0.003;
+          const phase = ts * (0.00055 + t * 0.00045) + i * 1.5;
+          ctx.beginPath();
+          ctx.moveTo(0, wy);
+          for (let x = 0; x <= W; x += 3) ctx.lineTo(x, wy + Math.sin(x * freq + phase) * amp);
+          ctx.lineTo(W, sandY); ctx.lineTo(0, sandY); ctx.closePath();
+          ctx.fillStyle = `rgba(70,155,210,${0.10 + t * 0.12})`;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(0, wy);
+          for (let x = 0; x <= W; x += 3) ctx.lineTo(x, wy + Math.sin(x * freq + phase) * amp);
+          ctx.strokeStyle = `rgba(190,235,255,${0.18 + t * 0.14})`;
+          ctx.lineWidth = 0.7 + t * 0.7;
+          ctx.stroke();
+        }
+
+        // ── Sand ─────────────────────────────────────
+        const sandG = ctx.createLinearGradient(0, sandY, 0, H);
+        sandG.addColorStop(0,    '#c4975c');
+        sandG.addColorStop(0.35, '#ae7c40');
+        sandG.addColorStop(1,    '#8a5e28');
+        ctx.fillStyle = sandG;
+        ctx.fillRect(0, sandY, W, H - sandY);
+
+        // ── Atmospheric horizon glow ──────────────────
+        const atmG = ctx.createLinearGradient(0, horizY - 18, 0, horizY + 28);
+        atmG.addColorStop(0,   'rgba(255,128,18,0)');
+        atmG.addColorStop(0.5, 'rgba(255,128,18,0.16)');
+        atmG.addColorStop(1,   'rgba(200,75,8,0)');
+        ctx.fillStyle = atmG;
+        ctx.fillRect(0, horizY - 18, W, 46);
+
+        // ── "Ukelele Time!" text ──────────────────────
+        const fontSize = Math.max(26, Math.min(W, H) * 0.082);
+        ctx.save();
+        ctx.font        = `900 ${fontSize}px sans-serif`;
+        ctx.textAlign   = 'center';
+        ctx.textBaseline = 'middle';
+        const txtY = H * 0.74;
+
+        // Glow pass
+        ctx.shadowColor  = 'rgba(255,160,20,0.55)';
+        ctx.shadowBlur   = fontSize * 0.5;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Ukelele Time!', W / 2, txtY);
+
+        // Crisp warm-gradient pass on top
+        ctx.shadowColor = 'rgba(0,0,0,0.65)';
+        ctx.shadowBlur  = fontSize * 0.22;
+        ctx.shadowOffsetX = fontSize * 0.03;
+        ctx.shadowOffsetY = fontSize * 0.04;
+        const txtG = ctx.createLinearGradient(W / 2 - fontSize * 3, 0, W / 2 + fontSize * 3, 0);
+        txtG.addColorStop(0,    '#ffe566');
+        txtG.addColorStop(0.45, '#ffb830');
+        txtG.addColorStop(1,    '#ff8010');
+        ctx.fillStyle = txtG;
+        ctx.fillText('Ukelele Time!', W / 2, txtY);
+        ctx.restore();
+
+        // ── Dismiss hint ──────────────────────────────
+        ctx.globalAlpha = 0.38;
+        ctx.fillStyle   = '#ffffff';
+        ctx.font        = `${Math.max(11, H * 0.021)}px sans-serif`;
+        ctx.textAlign   = 'center';
+        ctx.fillText('tap anywhere to close', W / 2, H - 16);
+        ctx.globalAlpha = 1;
+        ctx.textAlign   = 'left';
+
+        rafId = requestAnimationFrame(draw);
+      }
+
+      rafId = requestAnimationFrame(draw);
+    }
   </script>
 </body>
 </html>

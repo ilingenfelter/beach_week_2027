@@ -82,13 +82,13 @@
       <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
-        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
         <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
-        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
-        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
         <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
-        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
         <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
         <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Feedback</a></li>
       </ul>
     </div>
@@ -126,7 +126,6 @@
       <div id="mealEditRows"></div>
       <div class="flex flex-gap flex-wrap mt-2">
         <button class="btn btn-primary" onclick="saveMeals()">💾 Save Changes</button>
-        <button class="btn btn-ghost"   onclick="resetMeals()">↩️ Reset to Defaults</button>
       </div>
       <p id="mealSaveMsg" class="success-text mt-1"></p>
     </section>
@@ -166,16 +165,6 @@
       const msg = document.getElementById('mealSaveMsg');
       msg.textContent = '✅ Meals saved!';
       setTimeout(() => { msg.textContent = ''; }, 3000);
-    }
-
-    function resetMeals() {
-      if (!confirm('Reset all meals to the defaults in config.js? This cannot be undone.')) return;
-      localStorage.removeItem(STORAGE_KEY);
-      dbSet('meals', JSON.parse(JSON.stringify(CONFIG.initialMeals)));
-      renderMeals();
-      buildEditForm();
-      document.getElementById('mealSaveMsg').textContent = '↩️ Reset to defaults.';
-      setTimeout(() => { document.getElementById('mealSaveMsg').textContent = ''; }, 3000);
     }
 
     // ── Render meal cards ─────────────────────────
