@@ -47,10 +47,13 @@
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
         <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
-        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
-        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
         <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
         <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
       </ul>
     </div>
   </nav>
@@ -97,14 +100,25 @@
       <div class="info-grid" id="infoGrid"></div>
     </section>
 
+    <!-- Nearest Airports -->
+    <section class="section">
+      <h2 class="section-title">✈️ Nearest Airports</h2>
+      <p class="section-subtitle">Driving distances from 115 East Dove Street, Nags Head, NC</p>
+      <div class="info-grid" id="airportGrid"></div>
+    </section>
+
     <!-- Quick Links -->
     <section class="section">
       <h2 class="section-title">🔗 Quick Links</h2>
       <div class="flex flex-wrap flex-gap">
-        <a href="meals.html"      class="btn btn-primary">🍽️ View Meal Schedule</a>
-        <a href="activities.html" class="btn btn-secondary">🗳️ Vote on Activities</a>
+        <a href="meals.html"      class="btn btn-primary">🍽️ Meal Schedule</a>
+        <a href="activities.html" class="btn btn-secondary">🗳️ Activities</a>
+        <a href="euchre.html"     class="btn btn-coral">🃏 Euchre</a>
+        <a href="packing.html"    class="btn btn-ghost">🤝 Shared Items</a>
+        <a href="uke.html"        class="btn btn-ghost">🎸 Uke Jams</a>
+        <a href="board.html"      class="btn btn-ghost">📌 Bulletin Board</a>
         <a href="weather.html"    class="btn btn-ghost">🌊 Weather &amp; Tides</a>
-        <a href="euchre.html"     class="btn btn-ghost">🃏 Euchre Tournament</a>
+        <a href="suggest.html"    class="btn btn-ghost" style="opacity:0.6;font-size:0.82rem;">💡 Suggest a Feature</a>
       </div>
     </section>
 
@@ -121,7 +135,7 @@
     setActiveNav('index.html');
 
     // Hero content from config
-    document.getElementById('heroTitle').textContent    = `🏖️ ${siteName()}`;
+    document.getElementById('heroTitle').innerHTML = `<span id="beachIcon" style="cursor:pointer;display:inline-block;" title="🌊">🏖️</span> ${siteName()}`;
     document.getElementById('heroDates').textContent    = `📅 ${CONFIG.dates.start} – ${CONFIG.dates.end}`;
     document.getElementById('heroLocation').textContent = `📍 ${CONFIG.location}`;
     document.title = `${siteName()} — Home`;
@@ -151,6 +165,28 @@
         ${valueHtml}
       `;
       grid.appendChild(div);
+    });
+
+    // ── Nearest airports ──────────────────────────
+    const AIRPORTS = [
+      { code: 'ORF', name: 'Norfolk International',           city: 'Norfolk, VA',           miles: 73,  drive: '~1h 20m' },
+      { code: 'RDU', name: 'Raleigh-Durham International',    city: 'Raleigh-Durham, NC',    miles: 175, drive: '~2h 45m' },
+      { code: 'RIC', name: 'Richmond International',          city: 'Richmond, VA',          miles: 150, drive: '~2h 30m' },
+      { code: 'BWI', name: 'Baltimore/Washington International', city: 'Baltimore, MD',       miles: 225, drive: '~3h 30m' },
+      { code: 'CLT', name: 'Charlotte Douglas International', city: 'Charlotte, NC',         miles: 325, drive: '~5h' },
+    ];
+
+    const airportGrid = document.getElementById('airportGrid');
+    AIRPORTS.forEach(ap => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <div class="card-icon">✈️</div>
+        <div class="card-title">${ap.name} <span style="font-size:0.78rem;font-weight:700;color:var(--ocean-mid);background:var(--sky-blue);border-radius:4px;padding:0.05rem 0.3rem;margin-left:0.2rem;">${ap.code}</span></div>
+        <div class="card-value" style="font-size:1.1rem;font-weight:800;color:var(--text-dark);">${ap.miles} miles</div>
+        <div style="font-size:0.82rem;color:var(--text-light);margin-top:0.1rem;">${ap.city} · Drive ${ap.drive}</div>
+      `;
+      airportGrid.appendChild(div);
     });
 
     // ── Countdown timer ───────────────────────────
@@ -290,6 +326,108 @@
           else canvas.remove();
         })();
       }
+    })();
+
+    // ── Easter Egg: Wave Sweep ─────────────────────
+    (function() {
+      const iconEl = document.getElementById('beachIcon');
+      if (!iconEl) return;
+
+      iconEl.addEventListener('click', function() {
+        // Don't stack waves
+        if (document.getElementById('waveCanvas')) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.id = 'waveCanvas';
+        canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9995;';
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        const W = canvas.width;
+        const H = canvas.height;
+        const WAVE_H = H * 0.55; // wave takes up bottom 55% of screen
+        const SPEED  = W / 55;   // pixels per frame — full sweep ~55 frames
+        let   x      = -W * 0.25; // leading edge starts off-screen left
+        let   frameId;
+
+        function drawWave() {
+          ctx.clearRect(0, 0, W, H);
+
+          // How far across has the leading edge traveled? (0→W + overshoot)
+          const progress = (x + W * 0.25) / (W * 1.5);
+
+          // Fade in as wave enters, fade out as it exits
+          let alpha = 1;
+          if (progress < 0.12)       alpha = progress / 0.12;
+          else if (progress > 0.75)  alpha = 1 - (progress - 0.75) / 0.25;
+          alpha = Math.max(0, Math.min(1, alpha));
+
+          // ── Main wave body ──────────────────────────
+          const grad = ctx.createLinearGradient(0, H - WAVE_H - 60, 0, H);
+          grad.addColorStop(0,   `rgba(17,138,178,${0.55 * alpha})`);
+          grad.addColorStop(0.5, `rgba(15,111,196,${0.72 * alpha})`);
+          grad.addColorStop(1,   `rgba(6, 91, 155,${0.85 * alpha})`);
+          ctx.fillStyle = grad;
+
+          ctx.beginPath();
+          ctx.moveTo(0, H);
+
+          // Left side: fill from bottom-left up to the sinusoidal edge
+          // Wave only exists to the left of the leading edge
+          const edgeX = x;
+
+          // Build wavy top edge from left to the leading edge
+          ctx.lineTo(0, H - WAVE_H);
+          const STEPS = 120;
+          for (let i = 0; i <= STEPS; i++) {
+            const px = (edgeX) * (i / STEPS);
+            if (px < 0) continue;
+            const py = H - WAVE_H
+                      - Math.sin((px / W) * Math.PI * 5 + performance.now() * 0.003) * 28
+                      - Math.sin((px / W) * Math.PI * 9 + performance.now() * 0.005) * 12;
+            ctx.lineTo(px, py);
+          }
+
+          ctx.lineTo(Math.max(edgeX, 0), H);
+          ctx.closePath();
+          ctx.fill();
+
+          // ── Foam crest along leading edge ──────────
+          if (edgeX > 0 && edgeX < W + 80) {
+            const foamGrad = ctx.createLinearGradient(edgeX - 60, 0, edgeX + 20, 0);
+            foamGrad.addColorStop(0,   `rgba(255,255,255,0)`);
+            foamGrad.addColorStop(0.5, `rgba(255,255,255,${0.65 * alpha})`);
+            foamGrad.addColorStop(1,   `rgba(255,255,255,0)`);
+
+            ctx.strokeStyle = foamGrad;
+            ctx.lineWidth   = 18;
+            ctx.lineCap     = 'round';
+            ctx.beginPath();
+            for (let i = 0; i <= STEPS; i++) {
+              const px = (edgeX) * (i / STEPS);
+              if (px < 0) continue;
+              const py = H - WAVE_H
+                        - Math.sin((px / W) * Math.PI * 5 + performance.now() * 0.003) * 28
+                        - Math.sin((px / W) * Math.PI * 9 + performance.now() * 0.005) * 12;
+              if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+          }
+
+          x += SPEED;
+
+          if (progress < 1.05) {
+            frameId = requestAnimationFrame(drawWave);
+          } else {
+            cancelAnimationFrame(frameId);
+            canvas.remove();
+          }
+        }
+
+        frameId = requestAnimationFrame(drawWave);
+      });
     })();
   </script>
 </body>

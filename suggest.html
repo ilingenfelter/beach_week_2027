@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Site Suggestions</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    /* ── Suggestion card ── */
+    .suggest-card {
+      background: var(--white);
+      border-radius: var(--card-radius);
+      border: 1px solid var(--gray-light);
+      padding: 1rem 1.1rem 0.75rem;
+      margin-bottom: 0.75rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .suggest-card-top {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+    }
+    .suggest-vote-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      min-width: 40px;
+    }
+    .suggest-vote-btn {
+      background: var(--gray-light);
+      border: 1.5px solid var(--sky-blue);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      line-height: 1;
+    }
+    .suggest-vote-btn:hover     { background: var(--foam); border-color: var(--ocean-mid); transform: scale(1.08); }
+    .suggest-vote-btn.voted     { background: var(--ocean-mid); border-color: var(--ocean-deep); color: #fff; }
+    .suggest-vote-count {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--ocean-deep);
+    }
+    .suggest-body { flex: 1; min-width: 0; }
+    .suggest-text {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1.4;
+      margin-bottom: 0.4rem;
+      word-break: break-word;
+    }
+    .suggest-meta {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .suggest-comment-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--ocean-mid);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0;
+      transition: color 0.15s;
+    }
+    .suggest-comment-toggle:hover { color: var(--ocean-deep); text-decoration: underline; }
+    .suggest-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 0.9rem;
+      padding: 0.15rem 0.3rem;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .suggest-delete:hover { color: var(--error); background: #fde8e8; }
+
+    /* ── Comments section ── */
+    .suggest-comments {
+      margin-top: 0.85rem;
+      border-top: 1px solid var(--gray-light);
+      padding-top: 0.75rem;
+    }
+    .suggest-comments.hidden { display: none; }
+
+    .comment-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.45rem 0.6rem;
+      background: var(--off-white);
+      border-radius: var(--radius);
+      margin-bottom: 0.4rem;
+      font-size: 0.85rem;
+    }
+    .comment-content { flex: 1; min-width: 0; }
+    .comment-author {
+      font-weight: 800;
+      color: var(--ocean-deep);
+      margin-right: 0.35rem;
+    }
+    .comment-text {
+      color: var(--text-dark);
+      word-break: break-word;
+    }
+    .comment-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 0.8rem;
+      padding: 0.1rem 0.25rem;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .comment-delete:hover { color: var(--error); background: #fde8e8; }
+
+    .comment-form {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+    .comment-form input {
+      font-size: 0.83rem;
+      padding: 0.35rem 0.6rem;
+      border: 1.5px solid var(--sky-blue);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--text-dark);
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .comment-form input:focus { border-color: var(--ocean-mid); }
+    .comment-form .comment-input-name { width: 110px; flex-shrink: 0; }
+    .comment-form .comment-input-msg  { flex: 1; min-width: 120px; }
+    .comment-form .btn-xs {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .comment-empty {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      font-style: italic;
+      padding: 0.2rem 0;
+    }
+
+    /* ── Misc ── */
+    .suggest-count-badge {
+      background: var(--ocean-mid);
+      color: #fff;
+      border-radius: 99px;
+      padding: 0.15rem 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+    .suggest-empty {
+      text-align: center;
+      padding: 3.5rem 1rem;
+      color: var(--text-light);
+    }
+    .suggest-empty .big-icon { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>💡 Site Suggestions</h1>
+    <p>Have an idea to make this website better? Drop it here!</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
+      <div>
+        <h2 class="section-title" style="margin-bottom:0.15rem;">
+          Feature Suggestions
+          <span class="suggest-count-badge" id="suggestCount">0</span>
+        </h2>
+        <p class="text-muted" style="font-size:0.88rem;">Vote for ideas you like · Leave a comment · Top ideas rise to the top</p>
+      </div>
+      <button class="btn btn-ghost" onclick="toggleSuggestForm()">💡 Add Suggestion</button>
+    </div>
+
+    <!-- Add Suggestion Form -->
+    <section class="admin-section hidden mt-1 mb-3" id="suggestForm">
+      <div class="admin-section-title">💡 Submit a Suggestion</div>
+      <div class="form-group">
+        <label class="form-label">Your Idea</label>
+        <textarea id="suggestText" class="form-textarea" rows="3"
+          placeholder="e.g. Add a photo gallery, show a map of local restaurants, add a morning schedule…" maxlength="300"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Name <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <input type="text" id="suggestName" class="form-input" placeholder="e.g. Uncle Bob" maxlength="40" />
+      </div>
+      <p id="suggestError" class="error-text"></p>
+      <div class="flex flex-gap flex-wrap">
+        <button class="btn btn-primary" onclick="submitSuggestion()">✅ Submit</button>
+        <button class="btn btn-danger"  onclick="clearAllSuggestions()">🗑️ Clear All</button>
+      </div>
+    </section>
+
+    <!-- Suggestions list -->
+    <div id="suggestList"></div>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('suggest.html');
+    document.title = `${siteName()} — Suggestions`;
+
+    const SUGGEST_KEY = 'bw_suggestions';
+    const SVOTES_KEY  = 'bw_suggest_votes';
+
+    // ── Data helpers ─────────────────────────────
+    function loadSuggestions() {
+      try { return JSON.parse(localStorage.getItem(SUGGEST_KEY)) || []; }
+      catch(e) { return []; }
+    }
+
+    function saveSuggestions(arr) {
+      localStorage.setItem(SUGGEST_KEY, JSON.stringify(arr));
+      dbSet('suggestions', arr);
+    }
+
+    function loadMyVotes() {
+      return JSON.parse(localStorage.getItem(SVOTES_KEY) || '[]');
+    }
+
+    function saveMyVotes(arr) {
+      localStorage.setItem(SVOTES_KEY, JSON.stringify(arr));
+    }
+
+    // ── Submit suggestion ────────────────────────
+    function submitSuggestion() {
+      const text  = document.getElementById('suggestText').value.trim();
+      const name  = document.getElementById('suggestName').value.trim();
+      const errEl = document.getElementById('suggestError');
+      errEl.textContent = '';
+
+      if (!text) { errEl.textContent = 'Please describe your idea.'; return; }
+
+      const suggestions = loadSuggestions();
+      suggestions.unshift({
+        id:       's_' + Date.now(),
+        text,
+        name:     name || 'Anonymous',
+        votes:    0,
+        comments: [],
+      });
+      saveSuggestions(suggestions);
+      renderSuggestions();
+
+      document.getElementById('suggestText').value = '';
+      document.getElementById('suggestName').value = '';
+      errEl.textContent = '✅ Submitted!';
+      errEl.style.color = 'var(--success)';
+      setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 2500);
+    }
+
+    // ── Vote ─────────────────────────────────────
+    function vote(id) {
+      const myVotes     = loadMyVotes();
+      const suggestions = loadSuggestions();
+      const s           = suggestions.find(x => x.id === id);
+      if (!s) return;
+
+      const alreadyVoted = myVotes.includes(id);
+      if (alreadyVoted) {
+        s.votes = Math.max(0, (s.votes || 0) - 1);
+        saveMyVotes(myVotes.filter(v => v !== id));
+      } else {
+        s.votes = (s.votes || 0) + 1;
+        myVotes.push(id);
+        saveMyVotes(myVotes);
+      }
+      saveSuggestions(suggestions);
+
+      const nowVoted = !alreadyVoted;
+      document.getElementById('svb-' + id)?.classList.toggle('voted', nowVoted);
+      const cntEl = document.getElementById('svc-' + id);
+      if (cntEl) cntEl.textContent = s.votes;
+    }
+
+    // ── Add comment ──────────────────────────────
+    function addComment(sid) {
+      const nameEl = document.getElementById('cn-' + sid);
+      const msgEl  = document.getElementById('cm-' + sid);
+      const name   = nameEl?.value.trim();
+      const msg    = msgEl?.value.trim();
+      if (!msg)  { msgEl?.focus();  return; }
+      if (!name) { nameEl?.focus(); return; }
+
+      const suggestions = loadSuggestions();
+      const s = suggestions.find(x => x.id === sid);
+      if (!s) return;
+      if (!s.comments) s.comments = [];
+
+      const comment = { id: 'c_' + Date.now(), name, text: msg };
+      s.comments.push(comment);
+      saveSuggestions(suggestions);
+
+      // Append comment in-place without full re-render
+      renderComment(sid, comment);
+      updateCommentToggleLabel(sid, s.comments.length);
+
+      nameEl.value = '';
+      msgEl.value  = '';
+      msgEl.focus();
+    }
+
+    // ── Delete comment ───────────────────────────
+    function deleteComment(sid, cid) {
+      const suggestions = loadSuggestions();
+      const s = suggestions.find(x => x.id === sid);
+      if (!s) return;
+      s.comments = (s.comments || []).filter(c => c.id !== cid);
+      saveSuggestions(suggestions);
+      document.getElementById('cr-' + cid)?.remove();
+      updateCommentToggleLabel(sid, s.comments.length);
+    }
+
+    // ── Toggle comment section ───────────────────
+    function toggleComments(sid) {
+      document.getElementById('cs-' + sid)?.classList.toggle('hidden');
+    }
+
+    function updateCommentToggleLabel(sid, count) {
+      const btn = document.getElementById('ct-' + sid);
+      if (btn) btn.textContent = `💬 ${count} comment${count === 1 ? '' : 's'}`;
+    }
+
+    // ── Render a single comment row ──────────────
+    function renderComment(sid, c) {
+      const thread = document.getElementById('ct-thread-' + sid);
+      if (!thread) return;
+
+      // Remove "no comments yet" placeholder if present
+      const empty = thread.querySelector('.comment-empty');
+      if (empty) empty.remove();
+
+      const row = document.createElement('div');
+      row.className = 'comment-row';
+      row.id = 'cr-' + c.id;
+      row.innerHTML = `
+        <div class="comment-content">
+          <span class="comment-author">${escHtml(c.name)}:</span>
+          <span class="comment-text">${escHtml(c.text)}</span>
+        </div>
+        <button class="comment-delete" onclick="deleteComment('${escHtml(sid)}','${escHtml(c.id)}')" title="Delete comment">✕</button>
+      `;
+      thread.appendChild(row);
+    }
+
+    // ── Delete suggestion ────────────────────────
+    function deleteSuggestion(id) {
+      saveSuggestions(loadSuggestions().filter(s => s.id !== id));
+      document.getElementById('si-' + id)?.remove();
+      document.getElementById('suggestCount').textContent = loadSuggestions().length;
+    }
+
+    // ── Clear all ────────────────────────────────
+    function clearAllSuggestions() {
+      if (!confirm('Clear all suggestions? This cannot be undone.')) return;
+      localStorage.removeItem(SUGGEST_KEY);
+      dbSet('suggestions', null);
+      renderSuggestions();
+    }
+
+    // ── Build a full suggestion card element ─────
+    function buildCard(s, voted) {
+      const comments    = s.comments || [];
+      const commentCount = comments.length;
+
+      const card = document.createElement('div');
+      card.className = 'suggest-card';
+      card.id = 'si-' + s.id;
+
+      // Top row: vote + body + delete
+      card.innerHTML = `
+        <div class="suggest-card-top">
+          <div class="suggest-vote-col">
+            <button id="svb-${escHtml(s.id)}" class="suggest-vote-btn${voted ? ' voted' : ''}"
+              onclick="vote('${escHtml(s.id)}')" title="${voted ? 'Remove vote' : 'Upvote'}">▲</button>
+            <span class="suggest-vote-count" id="svc-${escHtml(s.id)}">${s.votes || 0}</span>
+          </div>
+          <div class="suggest-body">
+            <div class="suggest-text">${escHtml(s.text)}</div>
+            <div class="suggest-meta">
+              <span>💡 ${escHtml(s.name)}</span>
+              <button id="ct-${escHtml(s.id)}" class="suggest-comment-toggle"
+                onclick="toggleComments('${escHtml(s.id)}')">
+                💬 ${commentCount} comment${commentCount === 1 ? '' : 's'}
+              </button>
+            </div>
+          </div>
+          <button class="suggest-delete" onclick="deleteSuggestion('${escHtml(s.id)}')" title="Remove">✕</button>
+        </div>
+
+        <div id="cs-${escHtml(s.id)}" class="suggest-comments hidden">
+          <div id="ct-thread-${escHtml(s.id)}">
+            ${commentCount === 0
+              ? '<div class="comment-empty">No comments yet — be the first!</div>'
+              : comments.map(c => `
+                  <div class="comment-row" id="cr-${escHtml(c.id)}">
+                    <div class="comment-content">
+                      <span class="comment-author">${escHtml(c.name)}:</span>
+                      <span class="comment-text">${escHtml(c.text)}</span>
+                    </div>
+                    <button class="comment-delete" onclick="deleteComment('${escHtml(s.id)}','${escHtml(c.id)}')" title="Delete comment">✕</button>
+                  </div>`).join('')
+            }
+          </div>
+          <div class="comment-form">
+            <input id="cn-${escHtml(s.id)}" class="comment-input-name" type="text"
+              placeholder="Your name" maxlength="40"
+              onkeydown="if(event.key==='Enter') addComment('${escHtml(s.id)}')" />
+            <input id="cm-${escHtml(s.id)}" class="comment-input-msg" type="text"
+              placeholder="Add a comment…" maxlength="200"
+              onkeydown="if(event.key==='Enter') addComment('${escHtml(s.id)}')" />
+            <button class="btn btn-primary btn-sm btn-xs" onclick="addComment('${escHtml(s.id)}')">Post</button>
+          </div>
+        </div>
+      `;
+
+      return card;
+    }
+
+    // ── Render all suggestions ───────────────────
+    function renderSuggestions() {
+      const suggestions = loadSuggestions();
+      const myVotes     = loadMyVotes();
+      const list        = document.getElementById('suggestList');
+      const badge       = document.getElementById('suggestCount');
+
+      badge.textContent = suggestions.length;
+      list.innerHTML = '';
+
+      if (suggestions.length === 0) {
+        list.innerHTML = `
+          <div class="suggest-empty">
+            <span class="big-icon">💡</span>
+            <strong>No suggestions yet!</strong>
+            <p class="mt-1">Got an idea? Click <strong>💡 Add Suggestion</strong> above.</p>
+          </div>`;
+        return;
+      }
+
+      const sorted = suggestions.slice().sort((a, b) => (b.votes || 0) - (a.votes || 0));
+      sorted.forEach(s => list.appendChild(buildCard(s, myVotes.includes(s.id))));
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toggleSuggestForm() {
+      document.getElementById('suggestForm').classList.toggle('hidden');
+    }
+
+    document.getElementById('suggestName').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitSuggestion();
+    });
+
+    // ── Boot ─────────────────────────────────────
+    renderSuggestions();
+    dbGet('suggestions').then(remote => {
+      if (!remote) return;
+      // Normalize top-level array and nested comments arrays (Firebase converts arrays → objects)
+      const arr = fbArr(remote);
+      arr.forEach(s => { s.comments = fbArr(s.comments); });
+      localStorage.setItem(SUGGEST_KEY, JSON.stringify(arr));
+      renderSuggestions();
+    });
+  </script>
+</body>
+</html>

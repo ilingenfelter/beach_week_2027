@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Shared Items</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    .pack-category-section { margin-bottom: 1.75rem; }
+    .pack-category-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--ocean-deep);
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid var(--sky-blue);
+    }
+    .pack-category-count {
+      background: var(--ocean-mid);
+      color: #fff;
+      border-radius: 99px;
+      padding: 0.1rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-left: auto;
+    }
+    .pack-item-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-light);
+      margin-bottom: 0.45rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .pack-item-name {
+      flex: 1;
+      font-weight: 700;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+    }
+    .pack-item-who {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+    .pack-item-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 1rem;
+      padding: 0.2rem 0.3rem;
+      border-radius: 4px;
+      line-height: 1;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .pack-item-delete:hover { color: var(--error); background: #fde8e8; }
+    .pack-empty-cat {
+      color: var(--text-light);
+      font-size: 0.85rem;
+      font-style: italic;
+      padding: 0.4rem 0.85rem;
+    }
+    .pack-total-badge {
+      background: var(--ocean-mid);
+      color: #fff;
+      border-radius: 99px;
+      padding: 0.15rem 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+    .pack-empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-light);
+    }
+    .pack-empty-state .big-icon { font-size: 3.5rem; display: block; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>🤝 Shared Items</h1>
+    <p>Communal gear everyone can use — add what you're willing to bring and share with the group</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Header row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
+      <div>
+        <h2 class="section-title" style="margin-bottom:0.15rem;">
+          Shared Items for Beach Week
+          <span class="pack-total-badge" id="packTotal">0</span>
+        </h2>
+        <p class="text-muted" style="font-size:0.88rem;">Add communal items you're willing to bring and share with everyone</p>
+      </div>
+      <button class="btn btn-primary" onclick="togglePackForm()">➕ Add Item</button>
+    </div>
+
+    <!-- Add Item Form -->
+    <section class="admin-section hidden mt-1 mb-3" id="packForm">
+      <div class="admin-section-title">➕ Add a Shared Item</div>
+      <div class="form-group">
+        <label class="form-label">Item</label>
+        <input type="text" id="packItem" class="form-input" placeholder="e.g. Beach umbrella, Card games, Sunscreen…" maxlength="80" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" id="packWho" class="form-input" placeholder="e.g. Uncle Bob" maxlength="40" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="packCategory" class="form-input">
+          <option value="beach">🏖️ Beach Gear</option>
+          <option value="games">🎮 Games &amp; Fun</option>
+          <option value="other">📦 Other</option>
+        </select>
+      </div>
+      <p id="packError" class="error-text"></p>
+      <div class="flex flex-gap flex-wrap">
+        <button class="btn btn-primary" onclick="addPackItem()">✅ Add to List</button>
+        <button class="btn btn-danger"  onclick="clearAllPacking()">🗑️ Clear All</button>
+      </div>
+    </section>
+
+    <!-- Packing list grouped by category -->
+    <div id="packingList"></div>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('packing.html');
+    document.title = `${siteName()} — Shared Items`;
+
+    const PACK_KEY = 'bw_packing';
+
+    const CATEGORIES = [
+      { id: 'beach', label: '🏖️ Beach Gear' },
+      { id: 'games', label: '🎮 Games & Fun' },
+      { id: 'other', label: '📦 Other' },
+    ];
+
+    // ── Data helpers ──────────────────────────────
+    function loadPacking() {
+      try { return JSON.parse(localStorage.getItem(PACK_KEY)) || []; }
+      catch(e) { return []; }
+    }
+
+    function savePacking(arr) {
+      localStorage.setItem(PACK_KEY, JSON.stringify(arr));
+      dbSet('packing', arr);
+    }
+
+    // ── Add item ──────────────────────────────────
+    function addPackItem() {
+      const item  = document.getElementById('packItem').value.trim();
+      const who   = document.getElementById('packWho').value.trim();
+      const cat   = document.getElementById('packCategory').value;
+      const errEl = document.getElementById('packError');
+      errEl.textContent = '';
+
+      if (!item) { errEl.textContent = 'Please enter an item name.'; return; }
+      if (!who)  { errEl.textContent = 'Please enter your name.'; return; }
+
+      const items = loadPacking();
+      items.push({ id: 'p_' + Date.now(), item, who, category: cat });
+      savePacking(items);
+      renderPacking();
+
+      document.getElementById('packItem').value = '';
+      document.getElementById('packWho').value  = '';
+      errEl.textContent  = '✅ Added!';
+      errEl.style.color  = 'var(--success)';
+      setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 2000);
+      document.getElementById('packItem').focus();
+    }
+
+    // ── Delete item ───────────────────────────────
+    function deletePackItem(id) {
+      const items = loadPacking().filter(p => p.id !== id);
+      savePacking(items);
+      renderPacking();
+    }
+
+    // ── Clear all ─────────────────────────────────
+    function clearAllPacking() {
+      if (!confirm('Clear the entire packing list? This cannot be undone.')) return;
+      localStorage.removeItem(PACK_KEY);
+      dbSet('packing', null);
+      renderPacking();
+    }
+
+    // ── Render ────────────────────────────────────
+    function renderPacking() {
+      const items     = loadPacking();
+      const container = document.getElementById('packingList');
+      const badge     = document.getElementById('packTotal');
+      badge.textContent = items.length;
+      container.innerHTML = '';
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="pack-empty-state">
+            <span class="big-icon">🎒</span>
+            <strong>Nothing packed yet!</strong>
+            <p class="mt-1">Be the first to add something — click <strong>➕ Add Item</strong> above.</p>
+          </div>`;
+        return;
+      }
+
+      CATEGORIES.forEach(cat => {
+        const catItems = items.filter(p => (p.category || 'other') === cat.id);
+
+        const section = document.createElement('div');
+        section.className = 'pack-category-section';
+        section.innerHTML = `
+          <div class="pack-category-header">
+            ${cat.label}
+            <span class="pack-category-count">${catItems.length}</span>
+          </div>
+          ${catItems.length === 0
+            ? '<div class="pack-empty-cat">Nothing in this category yet</div>'
+            : catItems.map(p => `
+              <div class="pack-item-row" id="pr-${escHtml(p.id)}">
+                <span class="pack-item-name">${escHtml(p.item)}</span>
+                <span class="pack-item-who">👤 ${escHtml(p.who)}</span>
+                <button class="pack-item-delete" onclick="deletePackItem('${escHtml(p.id)}')" title="Remove item">✕</button>
+              </div>`).join('')
+          }
+        `;
+        container.appendChild(section);
+      });
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function togglePackForm() {
+      document.getElementById('packForm').classList.toggle('hidden');
+    }
+
+    // Enter key submits form
+    ['packItem','packWho','packCategory'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') addPackItem();
+      });
+    });
+
+    // ── Boot ──────────────────────────────────────
+    renderPacking();
+    dbGet('packing').then(remote => {
+      if (!remote) return;
+      const arr = fbArr(remote);
+      localStorage.setItem(PACK_KEY, JSON.stringify(arr));
+      renderPacking();
+    });
+  </script>
+</body>
+</html>

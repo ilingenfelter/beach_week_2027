@@ -49,13 +49,13 @@ const CONFIG = {
   // ── INITIAL MEAL SCHEDULE ────────────────────
   // Edit these to set your dinner assignments
   initialMeals: [
-    { day: "Saturday",  date: "Jul 10", family: "TBD",  dish: "Coming Soon 🍔",      notes: "Coming Soon!" },
-    { day: "Sunday",    date: "Jul 11", family: "TBD",    dish: "Coming Soon 🌮",        notes: "Coming Soon!" },
-    { day: "Monday",    date: "Jul 12", family: "TBD",  dish: "Coming Soon 🦐",     notes: "Coming Soon!" },
-    { day: "Tuesday",   date: "Jul 13", family: "TBD",   dish: "Coming Soon 🐷",      notes: "Coming Soon!" },
-    { day: "Wednesday", date: "Jul 14", family: "TBD",   dish: "Coming Soon 🍕",       notes: "Coming Soon!" },
-    { day: "Thursday",  date: "Jul 15", family: "TBD",   dish: "Coming Soon 🐟",        notes: "Coming Soon!" },
-    { day: "Friday",    date: "Jul 16", family: "TBD",   dish: "Coming Soon",  notes: "Coming Soon!" }
+    { day: "Saturday",  date: "Jul 10", family: "The Johnsons",  dish: "Welcome BBQ 🍔",      notes: "Burgers, hot dogs & potato salad — first night tradition!" },
+    { day: "Sunday",    date: "Jul 11", family: "The Smiths",    dish: "Taco Night 🌮",        notes: "All the fixings, make your own" },
+    { day: "Monday",    date: "Jul 12", family: "The Williams",  dish: "Seafood Pasta 🦐",     notes: "Fresh shrimp from the Wanchese docks" },
+    { day: "Tuesday",   date: "Jul 13", family: "The Garcias",   dish: "Carolina BBQ 🐷",      notes: "Pulled pork, mac & cheese, collard greens" },
+    { day: "Wednesday", date: "Jul 14", family: "The Millers",   dish: "Pizza Night 🍕",       notes: "Homemade dough — kids take over the kitchen!" },
+    { day: "Thursday",  date: "Jul 15", family: "The Davises",   dish: "Fish Tacos 🐟",        notes: "Catch of the day (hopefully!) or market backup" },
+    { day: "Friday",    date: "Jul 16", family: "The Wilsons",   dish: "Farewell Cookout 🎉",  notes: "Last night — everyone's favorites on the grill" }
   ],
 
   // ── INITIAL ACTIVITY PROPOSALS ───────────────
@@ -66,6 +66,15 @@ const CONFIG = {
     { id: "act4", name: "Fishing Charter", description: "Deep sea fishing — half-day charter, bring the sunscreen.",       proposedBy: "Uncle Jim", signups: [] },
     { id: "act5", name: "Go-Karts",        description: "Racing at the Nags Head track — adults vs. kids bracket.",       proposedBy: "The Kids",  signups: [] },
     { id: "act6", name: "Beach Bonfire",   description: "Bonfire on the beach at night — s'mores, stories, stargazing.",  proposedBy: "Aunt Mary", signups: [] }
+  ],
+
+  // ── INITIAL UKULELE SONG LIST ─────────────────
+  initialSongs: [
+    { id: "uke1", title: "Somewhere Over the Rainbow", artist: "Israel Kamakawiwoʻole", chordsUrl: "", suggestedBy: "Beach Week HQ", votes: 0 },
+    { id: "uke2", title: "Riptide",                    artist: "Vance Joy",             chordsUrl: "", suggestedBy: "Beach Week HQ", votes: 0 },
+    { id: "uke3", title: "I'm Yours",                  artist: "Jason Mraz",            chordsUrl: "", suggestedBy: "Beach Week HQ", votes: 0 },
+    { id: "uke4", title: "Banana Pancakes",            artist: "Jack Johnson",          chordsUrl: "", suggestedBy: "Beach Week HQ", votes: 0 },
+    { id: "uke5", title: "Three Little Birds",         artist: "Bob Marley",            chordsUrl: "", suggestedBy: "Beach Week HQ", votes: 0 }
   ]
 
 };
@@ -191,6 +200,20 @@ function dbSet(path, data) {
     if (!_fbdb) return;
     _fbdb.ref('beachweek/' + path).set(data).catch(() => {});
   });
+}
+
+/**
+ * Firebase Realtime Database converts JS arrays to objects with numeric keys
+ * (e.g. ["a","b"] → {"0":"a","1":"b"}).  Call fbArr() on any value read back
+ * from Firebase that should be an array.
+ */
+function fbArr(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return Object.keys(val)
+    .filter(k => !isNaN(Number(k)))
+    .sort((a, b) => Number(a) - Number(b))
+    .map(k => val[k]);
 }
 
 // ── Password gate ─────────────────────────────

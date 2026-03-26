@@ -125,6 +125,15 @@ ul  { list-style: none; }
   color: var(--white);
   text-decoration: none;
 }
+.nav-link-subtle {
+  opacity: 0.55;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.nav-link-subtle:hover,
+.nav-link-subtle.active {
+  opacity: 1;
+}
 .nav-toggle {
   display: none;
   background: none;

@@ -17,10 +17,13 @@
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
         <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
-        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
-        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
         <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
         <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
       </ul>
     </div>
   </nav>
@@ -251,8 +254,9 @@
     renderActivities(); // render immediately from localStorage
     dbGet('activities').then(remote => {
       if (!remote) return;
-      remote.forEach(a => { if (!a.signups) a.signups = []; });
-      localStorage.setItem(ACT_KEY, JSON.stringify(remote));
+      const arr = fbArr(remote);
+      arr.forEach(a => { a.signups = fbArr(a.signups); });
+      localStorage.setItem(ACT_KEY, JSON.stringify(arr));
       renderActivities();
     });
   </script>

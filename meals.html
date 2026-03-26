@@ -83,10 +83,13 @@
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
         <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
-        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
-        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
         <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
         <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
       </ul>
     </div>
   </nav>
@@ -229,26 +232,21 @@
 
     // ── Easter Egg: Magic 8-Ball excuses ─────────
     const EIGHT_BALL_EXCUSES = [
-      "The tide told me not to.",
-      "Mercury is in retrograde… and so is the oven.",
-      "I consulted the seagulls. They said no.",
-      "The beach vibes are incompatible with cooking.",
-      "Ask again after sunscreen application.",
-      "My flip flops are tied.",
-      "Outlook not so delicious.",
-      "The dolphins have spoken.",
-      "Cannot cook — currently in vacation mode.",
-      "Signs point to… ordering pizza.",
-      "The waves said to rest.",
-      "Try again when the sun goes down.",
-      "You may rely on the grill master instead.",
-      "The sand in my toes says absolutely not.",
-      "It is decidedly not my night.",
-      "Better not tell you now — I'm at the beach.",
-      "Concentrate and ask again… after a nap.",
-      "My seafood-to-chef ratio is off today.",
-      "Don't count on it. Count the pelicans instead.",
-      "The bonfire needs me more than the kitchen does.",
+      "The ocean called and I simply had to answer. All day.",
+      "The tide chart said cooking was inadvisable tonight.",
+      "I'm on vacation. Cooking is the opposite of vacation.",
+      "My hands are too relaxed from doing nothing all day to hold a spatula.",
+      "I peaked at breakfast and have nothing left to give.",
+      "The hammock had me in a legally binding contract until sunset.",
+      "I burned exactly the number of calories required to justify not cooking.",
+      "I lost my Euchre round. I am not okay. Do not ask me to cook.",
+      "I won, which means I deserve a night off. Obviously.",
+      "The cards said not to. I don't make the rules.",
+      "I cooked last beach week. Check the records.",
+      "My specialty dish requires an ingredient we definitely don't have.",
+      "Someone told me there's a great restaurant nearby and I feel strongly we should support local businesses.",
+      "The beach giveth and the beach taketh away my motivation to cook.",
+      "I asked the seagulls for guidance and they said no cooking.",
     ];
 
     function shakeEightBall() {
@@ -272,7 +270,8 @@
     renderMeals(); // render immediately from localStorage
     dbGet('meals').then(remote => {
       if (!remote) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+      const arr = fbArr(remote);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
       renderMeals();
       if (!document.getElementById('adminMealForm').classList.contains('hidden')) buildEditForm();
     });

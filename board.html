@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Bulletin Board</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    /* ── Board layout ── */
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* ── Sticky note card ── */
+    .sticky-note {
+      position: relative;
+      border-radius: 4px 4px 4px 4px;
+      padding: 1.1rem 1rem 0.85rem;
+      box-shadow: 3px 4px 14px rgba(0,0,0,0.18), inset 0 -3px 0 rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      /* Subtle random-ish tilt applied inline via JS */
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sticky-note:hover {
+      transform: scale(1.03) rotate(0deg) !important;
+      box-shadow: 5px 8px 24px rgba(0,0,0,0.22);
+      z-index: 2;
+    }
+    /* Folded corner effect */
+    .sticky-note::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 22px; height: 22px;
+      background: rgba(0,0,0,0.12);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+
+    /* Color variants */
+    .note-yellow  { background: #ffe96a; color: #5a4000; }
+    .note-pink    { background: #ffb3c6; color: #5a0020; }
+    .note-green   { background: #b5ead7; color: #1a4a30; }
+    .note-blue    { background: #a0d8ef; color: #0a2a40; }
+    .note-purple  { background: #d4b8f0; color: #2d1060; }
+    .note-orange  { background: #ffcb8a; color: #5a2800; }
+
+    .sticky-note-msg {
+      font-size: 0.97rem;
+      font-weight: 600;
+      line-height: 1.45;
+      word-break: break-word;
+      flex: 1;
+    }
+    .sticky-note-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      opacity: 0.7;
+      font-weight: 700;
+    }
+    .sticky-note-author { display: flex; align-items: center; gap: 0.3rem; }
+
+    .sticky-note-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.15rem 0.25rem;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s;
+      color: inherit;
+      line-height: 1;
+    }
+    .sticky-note:hover .sticky-note-delete { opacity: 0.6; }
+    .sticky-note-delete:hover              { opacity: 1 !important; background: rgba(0,0,0,0.12); }
+
+    /* ── Color picker ── */
+    .color-picker {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .color-swatch {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s;
+    }
+    .color-swatch:hover    { transform: scale(1.15); }
+    .color-swatch.selected { border-color: var(--text-dark); transform: scale(1.15); }
+    .swatch-yellow  { background: #ffe96a; }
+    .swatch-pink    { background: #ffb3c6; }
+    .swatch-green   { background: #b5ead7; }
+    .swatch-blue    { background: #a0d8ef; }
+    .swatch-purple  { background: #d4b8f0; }
+    .swatch-orange  { background: #ffcb8a; }
+
+    /* ── Empty state ── */
+    .board-empty {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-light);
+      grid-column: 1 / -1;
+    }
+    .board-empty .big-icon { font-size: 3.5rem; display: block; margin-bottom: 0.75rem; }
+
+    /* ── Note count badge ── */
+    .note-count-badge {
+      background: var(--ocean-mid);
+      color: #fff;
+      border-radius: 99px;
+      padding: 0.15rem 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>📌 Bulletin Board</h1>
+    <p>Leave a note for the crew — beach thoughts, random musings, announcements, inside jokes</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Header row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
+      <div>
+        <h2 class="section-title" style="margin-bottom:0.15rem;">
+          Notes from the Crew
+          <span class="note-count-badge" id="noteCount">0</span>
+        </h2>
+        <p class="text-muted" style="font-size:0.88rem;">Post a sticky note — everyone can see it</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleNoteForm()">📝 Post a Note</button>
+    </div>
+
+    <!-- Post Note Form -->
+    <section class="admin-section hidden mt-1 mb-3" id="noteForm">
+      <div class="admin-section-title">📝 Post a Sticky Note</div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea id="noteMsg" class="form-textarea" rows="3"
+          placeholder="What's on your mind? Beach tips, shoutouts, random thoughts…" maxlength="280"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" id="noteName" class="form-input" placeholder="e.g. Aunt Karen" maxlength="40" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note Color</label>
+        <div class="color-picker" id="colorPicker">
+          <div class="color-swatch swatch-yellow selected" data-color="yellow"  onclick="pickColor('yellow')"  title="Yellow"></div>
+          <div class="color-swatch swatch-pink"           data-color="pink"    onclick="pickColor('pink')"    title="Pink"></div>
+          <div class="color-swatch swatch-green"          data-color="green"   onclick="pickColor('green')"   title="Green"></div>
+          <div class="color-swatch swatch-blue"           data-color="blue"    onclick="pickColor('blue')"    title="Blue"></div>
+          <div class="color-swatch swatch-purple"         data-color="purple"  onclick="pickColor('purple')"  title="Purple"></div>
+          <div class="color-swatch swatch-orange"         data-color="orange"  onclick="pickColor('orange')"  title="Orange"></div>
+        </div>
+      </div>
+      <p id="noteError" class="error-text"></p>
+      <div class="flex flex-gap flex-wrap">
+        <button class="btn btn-primary" onclick="postNote()">📌 Pin It!</button>
+        <button class="btn btn-danger"  onclick="clearAllNotes()">🗑️ Clear All</button>
+      </div>
+    </section>
+
+    <!-- Board -->
+    <div class="board-grid" id="boardGrid"></div>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('board.html');
+    document.title = `${siteName()} — Board`;
+
+    const BOARD_KEY = 'bw_board';
+    let selectedColor = 'yellow';
+
+    // Slight random tilts — seeded by note id for consistency
+    function tiltFor(id) {
+      let h = 0;
+      for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+      const deg = ((h % 9) - 4) * 0.8; // -3.2 to +3.2 degrees
+      return deg;
+    }
+
+    // ── Color picker ─────────────────────────────
+    function pickColor(color) {
+      selectedColor = color;
+      document.querySelectorAll('.color-swatch').forEach(s => {
+        s.classList.toggle('selected', s.dataset.color === color);
+      });
+    }
+
+    // ── Data helpers ─────────────────────────────
+    function loadNotes() {
+      try { return JSON.parse(localStorage.getItem(BOARD_KEY)) || []; }
+      catch(e) { return []; }
+    }
+
+    function saveNotes(arr) {
+      localStorage.setItem(BOARD_KEY, JSON.stringify(arr));
+      dbSet('board', arr);
+    }
+
+    // ── Post note ────────────────────────────────
+    function postNote() {
+      const msg   = document.getElementById('noteMsg').value.trim();
+      const name  = document.getElementById('noteName').value.trim();
+      const errEl = document.getElementById('noteError');
+      errEl.textContent = '';
+
+      if (!msg)  { errEl.textContent = 'Please write a message.'; return; }
+      if (!name) { errEl.textContent = 'Please enter your name.'; return; }
+
+      const notes = loadNotes();
+      notes.unshift({ id: 'n_' + Date.now(), msg, name, color: selectedColor });
+      saveNotes(notes);
+      renderBoard();
+
+      document.getElementById('noteMsg').value  = '';
+      errEl.textContent = '📌 Posted!';
+      errEl.style.color = 'var(--success)';
+      setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 2000);
+      document.getElementById('noteMsg').focus();
+    }
+
+    // ── Delete note ──────────────────────────────
+    function deleteNote(id) {
+      saveNotes(loadNotes().filter(n => n.id !== id));
+      document.getElementById('nn-' + id)?.remove();
+      document.getElementById('noteCount').textContent = loadNotes().length;
+    }
+
+    // ── Clear all ────────────────────────────────
+    function clearAllNotes() {
+      if (!confirm('Clear all notes from the board? This cannot be undone.')) return;
+      localStorage.removeItem(BOARD_KEY);
+      dbSet('board', null);
+      renderBoard();
+    }
+
+    // ── Build a single note element ──────────────
+    function buildNote(note) {
+      const el  = document.createElement('div');
+      el.id     = 'nn-' + note.id;
+      el.className = `sticky-note note-${note.color || 'yellow'}`;
+      el.style.transform = `rotate(${tiltFor(note.id)}deg)`;
+      el.innerHTML = `
+        <div class="sticky-note-msg">${escHtml(note.msg)}</div>
+        <div class="sticky-note-footer">
+          <span class="sticky-note-author">👤 ${escHtml(note.name)}</span>
+          <button class="sticky-note-delete" onclick="deleteNote('${escHtml(note.id)}')" title="Remove note">✕</button>
+        </div>
+      `;
+      return el;
+    }
+
+    // ── Render board ─────────────────────────────
+    function renderBoard() {
+      const notes = loadNotes();
+      const grid  = document.getElementById('boardGrid');
+      const badge = document.getElementById('noteCount');
+      badge.textContent = notes.length;
+      grid.innerHTML = '';
+
+      if (notes.length === 0) {
+        grid.innerHTML = `
+          <div class="board-empty">
+            <span class="big-icon">📌</span>
+            <strong>The board is bare!</strong>
+            <p class="mt-1">Be the first to post a note — click <strong>📝 Post a Note</strong> above.</p>
+          </div>`;
+        return;
+      }
+
+      notes.forEach(n => grid.appendChild(buildNote(n)));
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toggleNoteForm() {
+      document.getElementById('noteForm').classList.toggle('hidden');
+    }
+
+    // Enter in name field submits
+    document.getElementById('noteName').addEventListener('keydown', e => {
+      if (e.key === 'Enter') postNote();
+    });
+
+    // ── Boot ─────────────────────────────────────
+    renderBoard();
+    dbGet('board').then(remote => {
+      if (!remote) return;
+      const arr = fbArr(remote);
+      localStorage.setItem(BOARD_KEY, JSON.stringify(arr));
+      renderBoard();
+    });
+  </script>
+</body>
+</html>

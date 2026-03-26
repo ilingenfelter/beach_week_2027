@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beach Week — Uke Jams</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    .uke-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 1rem;
+    }
+    .uke-card {
+      position: relative;
+      background: var(--white);
+      border-radius: var(--card-radius);
+      padding: 1.2rem 1.1rem 1rem;
+      box-shadow: var(--shadow-sm);
+      border: 2px solid transparent;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .uke-card.top-vote {
+      border-color: var(--sand);
+      box-shadow: var(--shadow-md);
+    }
+    .uke-remove-btn {
+      position: absolute;
+      top: 0.6rem; right: 0.6rem;
+      background: none; border: none; cursor: pointer;
+      color: var(--text-light); font-size: 0.82rem;
+      padding: 0.2rem 0.45rem; border-radius: 4px; line-height: 1;
+      transition: color 0.15s, background 0.15s;
+    }
+    .uke-remove-btn:hover { color: var(--error); background: #fde8e8; }
+
+    .uke-rank     { font-size: 1.4rem; margin-bottom: 0.3rem; line-height: 1; }
+    .uke-title    { font-size: 1.05rem; font-weight: 800; color: var(--ocean-deep); margin-bottom: 0.15rem; padding-right: 1.5rem; }
+    .uke-artist   { font-size: 0.85rem; color: var(--text-light); font-style: italic; margin-bottom: 0.45rem; }
+    .uke-suggested{ font-size: 0.78rem; color: var(--text-light); margin-bottom: auto; padding-bottom: 0.75rem; }
+
+    .uke-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      padding-top: 0.7rem;
+      border-top: 1px solid var(--gray-light);
+      margin-top: 0.5rem;
+    }
+    .uke-chords-btn {
+      font-size: 0.8rem !important;
+      padding: 0.3rem 0.7rem !important;
+      white-space: nowrap;
+    }
+    .uke-vote-area {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-left: auto;
+    }
+    .uke-vote-count {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--ocean-deep);
+      min-width: 1.5ch;
+      text-align: center;
+    }
+    .uke-vote-label {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .uke-vote-btn {
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--radius);
+      border: 2px solid var(--ocean-mid);
+      background: var(--white);
+      color: var(--ocean-mid);
+      font-weight: 700;
+      font-size: 0.82rem;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .uke-vote-btn:hover { background: var(--ocean-mid); color: var(--white); }
+    .uke-vote-btn.voted {
+      background: var(--ocean-mid);
+      color: var(--white);
+      border-color: var(--ocean-mid);
+    }
+    .uke-vote-btn.voted:hover {
+      background: #fde8e8;
+      color: var(--error);
+      border-color: var(--error);
+    }
+    .uke-empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-light);
+    }
+    .uke-empty-state .big-icon { font-size: 3.5rem; display: block; margin-bottom: 0.75rem; }
+    .song-count-badge {
+      background: var(--ocean-mid);
+      color: #fff;
+      border-radius: 99px;
+      padding: 0.15rem 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVIGATION ────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="navBrand">🌊 Beach Week</div>
+      <button class="nav-toggle" onclick="toggleNav()" aria-label="Open menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
+        <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
+        <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
+        <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── PAGE HEADER ───────────────────────────── -->
+  <header class="page-header">
+    <h1>🎸 Ukulele Jams</h1>
+    <p>Suggest songs, vote for your favorites, and strum along all week</p>
+  </header>
+
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Header row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
+      <div>
+        <h2 class="section-title" style="margin-bottom:0.15rem;">
+          🎵 Song Suggestions
+          <span class="song-count-badge" id="songCount">0</span>
+        </h2>
+        <p class="text-muted" style="font-size:0.88rem;">Vote for songs you want to play · Top songs rise to the top</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleSongForm()">🎵 Suggest a Song</button>
+    </div>
+
+    <!-- Song Cards Grid -->
+    <div class="uke-grid" id="songsGrid"></div>
+
+    <!-- Add Song Form -->
+    <section class="admin-section hidden mt-3" id="songForm">
+      <div class="admin-section-title">🎵 Suggest a Song</div>
+      <div class="form-group">
+        <label class="form-label">Song Title</label>
+        <input type="text" id="newSongTitle" class="form-input" placeholder="e.g. Hotel California" maxlength="80" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Artist</label>
+        <input type="text" id="newSongArtist" class="form-input" placeholder="e.g. Eagles" maxlength="80" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Chords Link <span style="font-weight:400; text-transform:none; letter-spacing:0;">(optional — paste a URL to the chords)</span></label>
+        <input type="url" id="newSongChords" class="form-input" placeholder="https://ukutabs.com/…" />
+        <p class="form-hint">No link? Leave it blank and we'll auto-link to a search for you.</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Suggested By</label>
+        <input type="text" id="newSongBy" class="form-input" placeholder="e.g. Grandma" maxlength="40" />
+      </div>
+      <p id="songError" class="error-text"></p>
+      <div class="flex flex-gap flex-wrap">
+        <button class="btn btn-primary" onclick="addSong()">✅ Add Song</button>
+        <button class="btn btn-danger"  onclick="clearAllSongs()">🗑️ Reset All</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <footer class="site-footer">
+    <p id="footerText">🌊 Beach Week — Made with ❤️ for the whole crew</p>
+  </footer>
+
+  <script>
+    setNavBrand();
+    setFooter();
+    setActiveNav('uke.html');
+    document.title = `${siteName()} — Uke Jams`;
+
+    const UKE_KEY   = 'bw_songs';
+    const VOTES_KEY = 'bw_uke_votes';
+
+    // ── Data helpers ──────────────────────────────
+    function loadSongs() {
+      const saved = localStorage.getItem(UKE_KEY);
+      if (saved) return JSON.parse(saved);
+      const fresh = JSON.parse(JSON.stringify(CONFIG.initialSongs || []));
+      localStorage.setItem(UKE_KEY, JSON.stringify(fresh));
+      return fresh;
+    }
+
+    function saveSongs(arr) {
+      localStorage.setItem(UKE_KEY, JSON.stringify(arr));
+      dbSet('songs', arr);
+    }
+
+    function loadMyVotes() {
+      return JSON.parse(localStorage.getItem(VOTES_KEY) || '[]');
+    }
+
+    function saveMyVotes(arr) {
+      localStorage.setItem(VOTES_KEY, JSON.stringify(arr));
+    }
+
+    // ── Chords URL (auto-search fallback) ─────────
+    function chordsHref(song) {
+      if (song.chordsUrl) return song.chordsUrl;
+      const q = encodeURIComponent(`${song.title || ''} ${song.artist || ''} ukulele chords`);
+      return `https://ukutabs.com/search/?s=${encodeURIComponent(`${song.title || ''} ${song.artist || ''}`)}`;
+    }
+
+    // ── Vote — in-place update so order never shifts ──
+    function vote(id) {
+      const myVotes = loadMyVotes();
+      const songs   = loadSongs();
+      const song    = songs.find(s => s.id === id);
+      if (!song) return;
+
+      const alreadyVoted = myVotes.includes(id);
+      if (alreadyVoted) {
+        song.votes = Math.max(0, (song.votes || 0) - 1);
+        saveMyVotes(myVotes.filter(v => v !== id));
+      } else {
+        song.votes = (song.votes || 0) + 1;
+        myVotes.push(id);
+        saveMyVotes(myVotes);
+      }
+      saveSongs(songs);
+
+      const nowVoted = !alreadyVoted;
+      const countEl  = document.getElementById('vc-' + id);
+      const btnEl    = document.getElementById('vb-' + id);
+      if (countEl) countEl.textContent = song.votes;
+      if (btnEl) {
+        btnEl.classList.toggle('voted', nowVoted);
+        btnEl.textContent = nowVoted ? '✅ Voted!' : '👍 Vote';
+        btnEl.title = nowVoted ? 'Click to remove your vote' : 'Click to vote';
+      }
+    }
+
+    // ── Remove a song ─────────────────────────────
+    function removeSong(id) {
+      if (!confirm('Remove this song?')) return;
+      saveSongs(loadSongs().filter(s => s.id !== id));
+      document.getElementById('sc-' + id)?.remove();
+      document.getElementById('songCount').textContent = loadSongs().length;
+    }
+
+    // ── Add song ──────────────────────────────────
+    function addSong() {
+      const title  = document.getElementById('newSongTitle').value.trim();
+      const artist = document.getElementById('newSongArtist').value.trim();
+      const chords = document.getElementById('newSongChords').value.trim();
+      const by     = document.getElementById('newSongBy').value.trim();
+      const errEl  = document.getElementById('songError');
+      errEl.textContent = '';
+
+      if (!title) { errEl.textContent = 'Song title is required.'; return; }
+      if (!by)    { errEl.textContent = 'Please add your name.'; return; }
+
+      const songs = loadSongs();
+      songs.push({
+        id: 'uke_' + Date.now(),
+        title,
+        artist,
+        chordsUrl: chords,
+        suggestedBy: by,
+        votes: 0,
+      });
+      saveSongs(songs);
+      renderSongs();
+
+      document.getElementById('newSongTitle').value  = '';
+      document.getElementById('newSongArtist').value = '';
+      document.getElementById('newSongChords').value = '';
+      document.getElementById('newSongBy').value     = '';
+      errEl.textContent = '✅ Song added!';
+      errEl.style.color = 'var(--success)';
+      setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 2500);
+    }
+
+    function clearAllSongs() {
+      if (!confirm('Reset all songs back to the defaults from config.js?')) return;
+      localStorage.removeItem(UKE_KEY);
+      localStorage.removeItem(VOTES_KEY);
+      dbSet('songs', null);
+      renderSongs();
+    }
+
+    // ── Render ────────────────────────────────────
+    function renderSongs() {
+      const songs   = loadSongs();
+      const myVotes = loadMyVotes();
+      const grid    = document.getElementById('songsGrid');
+      document.getElementById('songCount').textContent = songs.length;
+      grid.innerHTML = '';
+
+      if (songs.length === 0) {
+        grid.innerHTML = `
+          <div class="uke-empty-state">
+            <span class="big-icon">🎸</span>
+            <strong>No songs yet!</strong>
+            <p class="mt-1">Suggest the first one using the button above.</p>
+          </div>`;
+        return;
+      }
+
+      const RANK = ['🥇', '🥈', '🥉'];
+      const sorted = songs.slice().sort((a, b) => (b.votes || 0) - (a.votes || 0));
+      const topVotes = sorted[0]?.votes || 0;
+
+      sorted.forEach((song, idx) => {
+        const voted    = myVotes.includes(song.id);
+        const isTop    = song.votes > 0 && song.votes === topVotes;
+        const rankIcon = idx < 3 && (song.votes || 0) > 0 ? RANK[idx] : '';
+        const href     = chordsHref(song);
+        const chordsLabel = song.chordsUrl ? '🎵 View Chords' : '🔍 Find Chords';
+
+        const card = document.createElement('div');
+        card.className = `uke-card${isTop ? ' top-vote' : ''}`;
+        card.id = 'sc-' + song.id;
+        card.innerHTML = `
+          <button class="uke-remove-btn" onclick="removeSong('${song.id}')" title="Remove song">✕</button>
+          ${rankIcon ? `<div class="uke-rank">${rankIcon}</div>` : ''}
+          <div class="uke-title">${escHtml(song.title)}</div>
+          ${song.artist ? `<div class="uke-artist">by ${escHtml(song.artist)}</div>` : ''}
+          <div class="uke-suggested">💡 Suggested by ${escHtml(song.suggestedBy)}</div>
+          <div class="uke-footer">
+            <a href="${escHtml(href)}" target="_blank" rel="noopener"
+               class="btn btn-ghost uke-chords-btn">${chordsLabel}</a>
+            <div class="uke-vote-area">
+              <div>
+                <div class="uke-vote-count" id="vc-${song.id}">${song.votes || 0}</div>
+                <div class="uke-vote-label">votes</div>
+              </div>
+              <button
+                id="vb-${song.id}"
+                class="uke-vote-btn${voted ? ' voted' : ''}"
+                onclick="vote('${song.id}')"
+                title="${voted ? 'Click to remove your vote' : 'Click to vote'}"
+              >${voted ? '✅ Voted!' : '👍 Vote'}</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toggleSongForm() {
+      document.getElementById('songForm').classList.toggle('hidden');
+    }
+
+    // ── Boot ──────────────────────────────────────
+    renderSongs();
+    dbGet('songs').then(remote => {
+      if (!remote) return;
+      const arr = fbArr(remote);
+      localStorage.setItem(UKE_KEY, JSON.stringify(arr));
+      renderSongs();
+    });
+  </script>
+</body>
+</html>

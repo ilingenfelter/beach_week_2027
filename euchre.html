@@ -105,10 +105,13 @@
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html"      class="nav-link">🏠 Home</a></li>
         <li><a href="meals.html"      class="nav-link">🍽️ Meals</a></li>
-        <li><a href="walk.html"       class="nav-link">🚶 Walk There</a></li>
-        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
         <li><a href="activities.html" class="nav-link">🗳️ Activities</a></li>
         <li><a href="euchre.html"     class="nav-link">🃏 Euchre</a></li>
+        <li><a href="packing.html"    class="nav-link">🤝 Shared Items</a></li>
+        <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
+        <li><a href="board.html"      class="nav-link">📌 Board</a></li>
+        <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
       </ul>
     </div>
   </nav>
@@ -117,6 +120,13 @@
   <header class="page-header">
     <h1>🃏 Euchre Tournament</h1>
     <p>Single-elimination · Up to 22 teams</p>
+    <p id="uncleRickTag" onclick="revealSmokeSignals()"
+       style="margin-top:0.5rem; font-size:0.85rem; opacity:0.7; cursor:pointer; user-select:none; font-style:italic;">
+      An Uncle Rick Classic
+    </p>
+    <p id="smokeMsg" style="display:none; margin-top:0.4rem; font-size:1rem; font-weight:800; letter-spacing:0.04em; color:#f4d35e; text-shadow:0 2px 8px rgba(0,0,0,0.4);">
+      Smoke Signals NOT Allowed
+    </p>
   </header>
 
   <!-- ── MAIN CONTENT ──────────────────────────── -->
@@ -514,6 +524,8 @@
     // Sync from Firebase on load
     dbGet('bracket').then(remote => {
       if (!remote) return;
+      // Firebase converts nested arrays to objects — normalize back
+      if (remote.rounds) remote.rounds = fbArr(remote.rounds).map(r => fbArr(r));
       localStorage.setItem(BKT_KEY, JSON.stringify(remote));
       currentTeamCount = remote.teamCount || currentTeamCount;
       renderBracket();
@@ -526,6 +538,13 @@
         document.getElementById('championBanner').classList.add('hidden');
       }
     });
+
+    function revealSmokeSignals() {
+      const msg = document.getElementById('smokeMsg');
+      const tag = document.getElementById('uncleRickTag');
+      msg.style.display = msg.style.display === 'none' ? 'block' : 'none';
+      tag.style.opacity = msg.style.display === 'none' ? '0.7' : '1';
+    }
 
     function toggleTournamentPanel() {
       const panel   = document.getElementById('adminEuchrePanel');
