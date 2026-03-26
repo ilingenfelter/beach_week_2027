@@ -90,14 +90,13 @@
       const saved = localStorage.getItem(ACT_KEY);
       if (saved) {
         const arr = JSON.parse(saved);
-        // Migrate old data: add signups array if missing
         arr.forEach(a => { if (!a.signups) a.signups = []; });
         return arr;
       }
-      // First load: seed from config
+      // First load: seed from config for initial render only — do NOT save to
+      // localStorage yet so we don't overwrite Firebase data on a fresh device
       const fresh = JSON.parse(JSON.stringify(CONFIG.initialActivities));
       fresh.forEach(a => { if (!a.signups) a.signups = []; });
-      localStorage.setItem(ACT_KEY, JSON.stringify(fresh));
       return fresh;
     }
 
@@ -106,8 +105,32 @@
       dbSet('activities', arr);
     }
 
+    // ── Firebase ready promise ────────────────────
+    // All write operations await this before reading/writing data, preventing
+    // the race condition where a fast interaction on a fresh device reads stale
+    // seed data and overwrites real Firebase signups.
+    const fbReady = dbGet('activities').then(remote => {
+      if (!remote) {
+        // No remote data yet — persist the seed so localStorage is populated
+        const seed = loadActivities();
+        localStorage.setItem(ACT_KEY, JSON.stringify(seed));
+        return;
+      }
+      const arr = fbArr(remote);
+      arr.forEach(a => { a.signups = fbArr(a.signups); });
+      localStorage.setItem(ACT_KEY, JSON.stringify(arr));
+      renderActivities();
+    }).catch(() => {
+      // Firebase unavailable — fall back to whatever is in localStorage
+      const seed = loadActivities();
+      if (!localStorage.getItem(ACT_KEY)) {
+        localStorage.setItem(ACT_KEY, JSON.stringify(seed));
+      }
+    });
+
     // ── Sign up ───────────────────────────────────
-    function signUp(id) {
+    async function signUp(id) {
+      await fbReady; // ensure we have the latest data before writing
       const nameEl = document.getElementById('si-' + id);
       const name   = nameEl ? nameEl.value.trim() : '';
       if (!name) { nameEl && nameEl.focus(); return; }
@@ -132,7 +155,8 @@
       nameEl.value = '';
     }
 
-    function removeSignup(actId, name) {
+    async function removeSignup(actId, name) {
+      await fbReady;
       const activities = loadActivities();
       const act        = activities.find(a => a.id === actId);
       if (!act) return;
@@ -155,8 +179,9 @@
     }
 
     // ── Remove activity ───────────────────────────
-    function removeActivity(id) {
+    async function removeActivity(id) {
       if (!confirm('Remove this activity?')) return;
+      await fbReady;
       const activities = loadActivities().filter(a => a.id !== id);
       saveActivities(activities);
       const card = document.getElementById('ac-' + id);
@@ -164,7 +189,8 @@
     }
 
     // ── Add activity ──────────────────────────────
-    function addActivity() {
+    async function addActivity() {
+      await fbReady;
       const name     = document.getElementById('newActName').value.trim();
       const desc     = document.getElementById('newActDesc').value.trim();
       const proposer = document.getElementById('newActProposer').value.trim();
@@ -251,14 +277,9 @@
     }
 
     // ── Boot ──────────────────────────────────────
-    renderActivities(); // render immediately from localStorage
-    dbGet('activities').then(remote => {
-      if (!remote) return;
-      const arr = fbArr(remote);
-      arr.forEach(a => { a.signups = fbArr(a.signups); });
-      localStorage.setItem(ACT_KEY, JSON.stringify(arr));
-      renderActivities();
-    });
+    // Render immediately from localStorage (or config seed) for instant display.
+    // fbReady (defined above) handles the Firebase sync and re-render.
+    renderActivities();
   </script>
 </body>
 </html>
