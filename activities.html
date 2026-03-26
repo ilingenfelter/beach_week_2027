@@ -23,7 +23,7 @@
         <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
         <li><a href="board.html"      class="nav-link">📌 Board</a></li>
         <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
-        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Feedback</a></li>
       </ul>
     </div>
   </nav>
@@ -106,24 +106,51 @@
     }
 
     // ── Firebase ready promise ────────────────────
-    // All write operations await this before reading/writing data, preventing
-    // the race condition where a fast interaction on a fresh device reads stale
-    // seed data and overwrites real Firebase signups.
+    // Merges Firebase data with localStorage using a union strategy — signups
+    // are NEVER deleted from localStorage by a stale or failed Firebase read.
+    // This prevents the bug where a silent Firebase write failure causes names
+    // to vanish on reload (Firebase had old data, overwrote good localStorage).
     const fbReady = dbGet('activities').then(remote => {
       if (!remote) {
-        // No remote data yet — persist the seed so localStorage is populated
-        const seed = loadActivities();
-        localStorage.setItem(ACT_KEY, JSON.stringify(seed));
+        // Firebase empty — ensure localStorage has at least the seed
+        if (!localStorage.getItem(ACT_KEY)) {
+          const seed = loadActivities();
+          localStorage.setItem(ACT_KEY, JSON.stringify(seed));
+        }
         return;
       }
-      const arr = fbArr(remote);
-      arr.forEach(a => { a.signups = fbArr(a.signups); });
-      localStorage.setItem(ACT_KEY, JSON.stringify(arr));
+
+      // Normalize Firebase's object-keyed arrays back to real arrays
+      const remoteArr = fbArr(remote);
+      remoteArr.forEach(a => { a.signups = fbArr(a.signups); });
+
+      // Load whatever we currently have locally (may include signups Firebase missed)
+      const localArr = loadActivities();
+
+      // Merge: for each remote activity, union its signups with any local signups
+      const merged = remoteArr.map(r => {
+        const l = localArr.find(a => a.id === r.id);
+        if (!l) return r;
+        const seen = new Set(r.signups.map(n => n.toLowerCase()));
+        const extra = l.signups.filter(n => !seen.has(n.toLowerCase()));
+        return extra.length ? { ...r, signups: [...r.signups, ...extra] } : r;
+      });
+
+      // Preserve any activities that only exist locally (newly added, not yet in Firebase)
+      localArr.forEach(l => {
+        if (!merged.find(a => a.id === l.id)) merged.push(l);
+      });
+
+      localStorage.setItem(ACT_KEY, JSON.stringify(merged));
+
+      // Push the fully-merged result back to Firebase so it stays in sync
+      dbSet('activities', merged);
+
       renderActivities();
     }).catch(() => {
       // Firebase unavailable — fall back to whatever is in localStorage
-      const seed = loadActivities();
       if (!localStorage.getItem(ACT_KEY)) {
+        const seed = loadActivities();
         localStorage.setItem(ACT_KEY, JSON.stringify(seed));
       }
     });

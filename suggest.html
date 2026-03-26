@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beach Week — Site Suggestions</title>
+  <title>Beach Week — Suggestions &amp; Bugs</title>
   <link rel="stylesheet" href="styles.css">
   <script src="config.js"></script>
   <style>
@@ -162,6 +162,28 @@
       padding: 0.2rem 0;
     }
 
+    /* ── Type badge ── */
+    .suggest-type-badge {
+      display: inline-block;
+      border-radius: 99px;
+      padding: 0.1rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .suggest-type-badge.type-feature {
+      background: var(--foam);
+      color: var(--ocean-deep);
+      border: 1px solid var(--sky-blue);
+    }
+    .suggest-type-badge.type-bug {
+      background: #fde8e8;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
     /* ── Misc ── */
     .suggest-count-badge {
       background: var(--ocean-mid);
@@ -197,15 +219,15 @@
         <li><a href="uke.html"        class="nav-link">🎸 Uke Jams</a></li>
         <li><a href="board.html"      class="nav-link">📌 Board</a></li>
         <li><a href="weather.html"    class="nav-link">🌊 Weather/Tide</a></li>
-        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Suggest</a></li>
+        <li><a href="suggest.html"    class="nav-link nav-link-subtle">💡 Feedback</a></li>
       </ul>
     </div>
   </nav>
 
   <!-- ── PAGE HEADER ───────────────────────────── -->
   <header class="page-header">
-    <h1>💡 Site Suggestions</h1>
-    <p>Have an idea to make this website better? Drop it here!</p>
+    <h1>💡 Suggestions &amp; Bugs</h1>
+    <p>Have an idea for the site, or found something broken? Drop it here!</p>
   </header>
 
   <!-- ── MAIN CONTENT ──────────────────────────── -->
@@ -214,21 +236,28 @@
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.25rem;">
       <div>
         <h2 class="section-title" style="margin-bottom:0.15rem;">
-          Feature Suggestions
+          Suggestions &amp; Bug Reports
           <span class="suggest-count-badge" id="suggestCount">0</span>
         </h2>
         <p class="text-muted" style="font-size:0.88rem;">Vote for ideas you like · Leave a comment · Top ideas rise to the top</p>
       </div>
-      <button class="btn btn-ghost" onclick="toggleSuggestForm()">💡 Add Suggestion</button>
+      <button class="btn btn-ghost" onclick="toggleSuggestForm()">➕ Add Feedback</button>
     </div>
 
-    <!-- Add Suggestion Form -->
+    <!-- Add Suggestion / Bug Form -->
     <section class="admin-section hidden mt-1 mb-3" id="suggestForm">
-      <div class="admin-section-title">💡 Submit a Suggestion</div>
+      <div class="admin-section-title">➕ Submit Feedback</div>
       <div class="form-group">
-        <label class="form-label">Your Idea</label>
+        <label class="form-label">Type</label>
+        <select id="suggestType" class="form-input">
+          <option value="feature">💡 Feature Idea</option>
+          <option value="bug">🐛 Bug Report</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="suggestTextLabel">Your Idea</label>
         <textarea id="suggestText" class="form-textarea" rows="3"
-          placeholder="e.g. Add a photo gallery, show a map of local restaurants, add a morning schedule…" maxlength="300"></textarea>
+          placeholder="e.g. Add a photo gallery, show a map of local restaurants…" maxlength="300"></textarea>
       </div>
       <div class="form-group">
         <label class="form-label">Your Name <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
@@ -255,7 +284,7 @@
     setNavBrand();
     setFooter();
     setActiveNav('suggest.html');
-    document.title = `${siteName()} — Suggestions`;
+    document.title = `${siteName()} — Suggestions & Bugs`;
 
     const SUGGEST_KEY = 'bw_suggestions';
     const SVOTES_KEY  = 'bw_suggest_votes';
@@ -279,20 +308,38 @@
       localStorage.setItem(SVOTES_KEY, JSON.stringify(arr));
     }
 
+    // ── Update form label based on type ─────────
+    document.getElementById('suggestType').addEventListener('change', function() {
+      const label = document.getElementById('suggestTextLabel');
+      const textarea = document.getElementById('suggestText');
+      if (this.value === 'bug') {
+        label.textContent = 'Describe the Bug';
+        textarea.placeholder = 'e.g. The euchre scores don\'t save after I close the page…';
+      } else {
+        label.textContent = 'Your Idea';
+        textarea.placeholder = 'e.g. Add a photo gallery, show a map of local restaurants…';
+      }
+    });
+
     // ── Submit suggestion ────────────────────────
     function submitSuggestion() {
       const text  = document.getElementById('suggestText').value.trim();
       const name  = document.getElementById('suggestName').value.trim();
+      const type  = document.getElementById('suggestType').value;
       const errEl = document.getElementById('suggestError');
       errEl.textContent = '';
 
-      if (!text) { errEl.textContent = 'Please describe your idea.'; return; }
+      if (!text) {
+        errEl.textContent = type === 'bug' ? 'Please describe the bug.' : 'Please describe your idea.';
+        return;
+      }
 
       const suggestions = loadSuggestions();
       suggestions.unshift({
         id:       's_' + Date.now(),
         text,
         name:     name || 'Anonymous',
+        type:     type,
         votes:    0,
         comments: [],
       });
@@ -301,6 +348,9 @@
 
       document.getElementById('suggestText').value = '';
       document.getElementById('suggestName').value = '';
+      document.getElementById('suggestType').value = 'feature';
+      document.getElementById('suggestTextLabel').textContent = 'Your Idea';
+      document.getElementById('suggestText').placeholder = 'e.g. Add a photo gallery, show a map of local restaurants…';
       errEl.textContent = '✅ Submitted!';
       errEl.style.color = 'var(--success)';
       setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; }, 2500);
@@ -424,6 +474,11 @@
       card.className = 'suggest-card';
       card.id = 'si-' + s.id;
 
+      const isBug    = s.type === 'bug';
+      const typeBadge = isBug
+        ? '<span class="suggest-type-badge type-bug">🐛 Bug</span>'
+        : '<span class="suggest-type-badge type-feature">💡 Feature</span>';
+
       // Top row: vote + body + delete
       card.innerHTML = `
         <div class="suggest-card-top">
@@ -435,7 +490,8 @@
           <div class="suggest-body">
             <div class="suggest-text">${escHtml(s.text)}</div>
             <div class="suggest-meta">
-              <span>💡 ${escHtml(s.name)}</span>
+              ${typeBadge}
+              <span>👤 ${escHtml(s.name)}</span>
               <button id="ct-${escHtml(s.id)}" class="suggest-comment-toggle"
                 onclick="toggleComments('${escHtml(s.id)}')">
                 💬 ${commentCount} comment${commentCount === 1 ? '' : 's'}
@@ -488,8 +544,8 @@
         list.innerHTML = `
           <div class="suggest-empty">
             <span class="big-icon">💡</span>
-            <strong>No suggestions yet!</strong>
-            <p class="mt-1">Got an idea? Click <strong>💡 Add Suggestion</strong> above.</p>
+            <strong>Nothing here yet!</strong>
+            <p class="mt-1">Got an idea or found a bug? Click <strong>➕ Add Feedback</strong> above.</p>
           </div>`;
         return;
       }
